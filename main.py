@@ -41,25 +41,40 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
     await update.message.reply_text('سلام به ربات مقاله یاب خوش اومدین', reply_markup=reply_markup)
 
-# هندلر برای دریافت کلمات کلیدی از کاربران
+
+
+
+
+
+
+
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
     text = update.message.text
     user_message = update.message.text
 
-    if text == 'دریافت با DOI':
+    if text == 'دریافت با DOI' and not context.user_data.get('await_doi'):
         context.user_data['await_doi'] = True
         await update.message.reply_text('DOI مورد نظر خود را وارد کنید:')
-    elif context.user_data.get('await_doi'):
-        doi = user_message
+
+    elif context.user_data.get('await_doi') and text != 'دریافت با کلمات کلیدی':
+        if "https://doi.org/" in user_message:
+            doi = user_message.split("https://doi.org/")[-1].strip()
+        else:    
+            doi = user_message
         result = search_in_multiple_sources(doi)
         context.user_data['await_doi'] = False
         await update.message.reply_text(result)
 
+
+
     elif text == 'دریافت با کلمات کلیدی':
         context.user_data['await_keywords'] = True
         await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
-    elif context.user_data.get('await_keywords'):
+
+    elif context.user_data.get('await_keywords') and text!='دریافت با DOI':
         keywords = user_message.replace(',', ' ').split()
         result = search_in_multiple_sources(' AND '.join(keywords))
         context.user_data['await_keywords'] = False
@@ -67,13 +82,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     elif text == 'بخش ارسال خودکار':
         await update.message.reply_text("این بخش در حال توسعه است.")
-
-
-
-
-
-
-
 
 
 
@@ -170,7 +178,8 @@ def search_in_multiple_sources(keywords_or_doi: str) -> str:
             conn.commit()
             return result
 
-    # پردازش کلمات کلیدی
+
+
     keywords = ' AND '.join(keywords_or_doi.split(','))
 
     result = search_articles_by_keywords_scholar(keywords)
