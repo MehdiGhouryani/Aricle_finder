@@ -91,10 +91,22 @@ def fetch_article_by_doi(doi: str) -> str:
     response = requests.get(f"{CROSSREF_API_URL}{doi}")
     if response.status_code == 200:
         data = response.json()
-        title = data['message']['title'][0]
-        authors = ', '.join([author['given'] + ' ' + author['family'] for author in data['message']['author']])
-        return f"📚 Title: {title}\n👨‍🔬 Authors: {authors}\n🔗 DOI: {doi}\n🔗 URL: {data['message']['URL']}"
-    return None
+        title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
+        authors = data['message'].get('author', [])
+        
+        author_names = []
+        for author in authors:
+            given = author.get('given', 'ناشناخته')
+            family = author.get('family', '')
+            author_names.append(f"{given} {family}".strip())
+        
+        authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
+        return f"📚 Title: {title}\n👨‍🔬 Authors: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {data['message'].get('URL', 'لینکی موجود نیست')}"
+    else:
+        return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
+    
+
+
 
 # تابع برای جستجوی مقاله در Sci-Hub با DOI
 def fetch_scihub_article(doi: str) -> str:
@@ -158,52 +170,61 @@ def search_pubmed(keywords: str) -> str:
 
 
 
+
+
+
 def search_in_multiple_sources(keywords_or_doi: str) -> str:
+    # اگر ورودی DOI باشد
     if keywords_or_doi.startswith('10.'):
         result = fetch_article_by_doi(keywords_or_doi)
-        if result:
-            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-            conn.commit()
-            return result
+        if "متاسفم" in result:  
+            return result 
 
-        # جستجو در Sci-Hub
+        # جستجو در Sci-Hub اگر مقاله پیدا نشود
         result = fetch_scihub_article(keywords_or_doi)
         if result:
             cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
             conn.commit()
             return result
 
-
-
+    # ترکیب کلمات کلیدی برای جستجو به صورت AND
     keywords = ' AND '.join(keywords_or_doi.split(','))
 
+    # جستجو در Semantic Scholar
     result = search_articles_by_keywords_scholar(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
+    # جستجو در Google Scholar
     result = search_articles_by_keywords_google(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
+    # جستجو در Arxiv
     result = search_arxiv(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
+    # جستجو در PubMed
     result = search_pubmed(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
+    # اگر هیچ مقاله‌ای پیدا نشود
     cursor.execute('UPDATE stats SET searches_failed = searches_failed + 1')
     conn.commit()
     return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
+
+
+
 
 
 
