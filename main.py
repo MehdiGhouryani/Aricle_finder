@@ -55,7 +55,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     text = update.message.text
     user_message = update.message.text
 
-    if text == 'دریافت با DOI' and not context.user_data.get('await_doi'):
+    if text == 'دریافت با DOI' and not context.user_data.get('await_keywords'):
         context.user_data['await_doi'] = True
         await update.message.reply_text('DOI مورد نظر خود را وارد کنید:')
 
@@ -74,7 +74,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data['await_keywords'] = True
         await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
 
-    elif context.user_data.get('await_keywords') and text!='دریافت با DOI':
+    elif context.user_data.get('await_keywords') and text !='دریافت با DOI':
         keywords = user_message.replace(',', ' ').split()
         result = search_in_multiple_sources(' AND '.join(keywords))
         context.user_data['await_keywords'] = False
