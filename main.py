@@ -55,7 +55,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     text = update.message.text
     user_message = update.message.text
 
-    if text == 'دریافت با DOI' and not context.user_data.get('await_keywords'):
+    if text == 'دریافت با DOI':
         context.user_data['await_doi'] = True
         await update.message.reply_text('DOI مورد نظر خود را وارد کنید:')
 
