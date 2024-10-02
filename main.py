@@ -8,9 +8,10 @@ import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TELEGRAM_TOKEN = '7821187888:AAGE4gJs0q5S2-Cbxsz67xU4yMoiY-2aOu4'
+TOKEN = '7821187888:AAGE4gJs0q5S2-Cbxsz67xU4yMoiY-2aOu4'
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
 SEMANTIC_SCHOLAR_API_URL = 'https://api.semanticscholar.org/graph/v1/paper/search'
+SCIHUB_URL = 'https://sci-hub.se/'
 
 # تنظیم پایگاه داده SQLite
 conn = sqlite3.connect('users.db', check_same_thread=False)
@@ -21,6 +22,67 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, user
 cursor.execute('''CREATE TABLE IF NOT EXISTS stats (searches_successful INTEGER, searches_failed INTEGER)''')
 conn.commit()
 
+
+
+
+
+
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.message.from_user
+    cursor.execute('INSERT OR IGNORE INTO users (id, username, keywords) VALUES (?, ?, ?)', (user.id, user.username, None))
+    conn.commit()
+
+    keyboards = [
+        [KeyboardButton('دریافت با DOI'), KeyboardButton('دریافت با کلمات کلیدی')],
+        [KeyboardButton('بخش ارسال خودکار')],
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
+    await update.message.reply_text('سلام به ربات مقاله یاب خوش اومدین', reply_markup=reply_markup)
+
+# هندلر برای دریافت کلمات کلیدی از کاربران
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.message.from_user.id
+    text = update.message.text
+    user_message = update.message.text
+
+    if text == 'دریافت با DOI':
+        context.user_data['await_doi'] = True
+        await update.message.reply_text('DOI مورد نظر خود را وارد کنید:')
+    elif context.user_data.get('await_doi'):
+        doi = user_message
+        result = search_in_multiple_sources(doi)
+        context.user_data['await_doi'] = False
+        await update.message.reply_text(result)
+
+    elif text == 'دریافت با کلمات کلیدی':
+        context.user_data['await_keywords'] = True
+        await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
+    elif context.user_data.get('await_keywords'):
+        keywords = user_message.replace(',', ' ').split()
+        result = search_in_multiple_sources(' AND '.join(keywords))
+        context.user_data['await_keywords'] = False
+        await update.message.reply_text(result)
+
+    elif text == 'بخش ارسال خودکار':
+        await update.message.reply_text("این بخش در حال توسعه است.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # تابع برای دریافت مقاله از CrossRef با DOI
 def fetch_article_by_doi(doi: str) -> str:
     response = requests.get(f"{CROSSREF_API_URL}{doi}")
@@ -30,6 +92,11 @@ def fetch_article_by_doi(doi: str) -> str:
         authors = ', '.join([author['given'] + ' ' + author['family'] for author in data['message']['author']])
         return f"📚 Title: {title}\n👨‍🔬 Authors: {authors}\n🔗 DOI: {doi}\n🔗 URL: {data['message']['URL']}"
     return None
+
+# تابع برای جستجوی مقاله در Sci-Hub با DOI
+def fetch_scihub_article(doi: str) -> str:
+    url = f"{SCIHUB_URL}{doi}"
+    return f"📰 مقاله‌ای با DOI: {doi} در Sci-Hub موجود است. می‌توانید از این لینک مشاهده کنید: {url}"
 
 # تابع برای جستجوی مقاله در Semantic Scholar
 def search_articles_by_keywords_scholar(keywords: str) -> str:
@@ -71,7 +138,7 @@ def search_arxiv(keywords: str) -> str:
         return articles if articles else "No articles found in arXiv."
     return "Error fetching articles from arXiv."
 
-# تابع برای جستجو در PubMed
+
 def search_pubmed(keywords: str) -> str:
     url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
     response = requests.get(url)
@@ -88,8 +155,6 @@ def search_pubmed(keywords: str) -> str:
 
 
 
-
-
 def search_in_multiple_sources(keywords_or_doi: str) -> str:
     if keywords_or_doi.startswith('10.'):
         result = fetch_article_by_doi(keywords_or_doi)
@@ -98,25 +163,35 @@ def search_in_multiple_sources(keywords_or_doi: str) -> str:
             conn.commit()
             return result
 
-    result = search_articles_by_keywords_scholar(keywords_or_doi)
+        # جستجو در Sci-Hub
+        result = fetch_scihub_article(keywords_or_doi)
+        if result:
+            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+            conn.commit()
+            return result
+
+    # پردازش کلمات کلیدی
+    keywords = ' AND '.join(keywords_or_doi.split(','))
+
+    result = search_articles_by_keywords_scholar(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
-    result = search_articles_by_keywords_google(keywords_or_doi)
+    result = search_articles_by_keywords_google(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
-    result = search_arxiv(keywords_or_doi)
+    result = search_arxiv(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
-    result = search_pubmed(keywords_or_doi)
+    result = search_pubmed(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
@@ -128,48 +203,6 @@ def search_in_multiple_sources(keywords_or_doi: str) -> str:
 
 
 
-
-# هندلر شروع برای کاربر
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.message.from_user
-    cursor.execute('INSERT OR IGNORE INTO users (id, username, keywords) VALUES (?, ?, ?)', (user.id, user.username, None))
-    conn.commit()
-
-    keyboards = [
-        [KeyboardButton('دریافت با DOI'), KeyboardButton('دریافت با کلمات کلیدی')],
-        [KeyboardButton('بخش ارسال خودکار')],
-    ]
-    reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
-    await update.message.reply_text('سلام به ربات مقاله یاب خوش اومدین', reply_markup=reply_markup)
-
-# هندلر برای دریافت کلمات کلیدی از کاربران
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_id = update.message.from_user.id
-    text = update.message.text
-    user_message = update.message.text
-
-    if text == 'دریافت با DOI':
-        context.user_data['await_doi'] = True
-        await update.message.reply_text('DOI مورد نظر خود را وارد کنید:')
-    elif context.user_data.get('await_doi'):
-        doi = user_message
-        result = search_in_multiple_sources(doi)
-        context.user_data['await_doi'] = False
-        await update.message.reply_text(result)
-
-    elif text == 'دریافت با کلمات کلیدی':
-        context.user_data['await_keywords'] = True
-        await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
-    elif context.user_data.get('await_keywords'):
-        keywords = user_message.replace(',', ' ').split()
-        result = search_in_multiple_sources(' '.join(keywords))
-        context.user_data['await_keywords'] = False
-        await update.message.reply_text(result)
-
-    elif text == 'بخش ارسال خودکار':
-        await update.message.reply_text("این بخش در حال توسعه است.")
-
-# هندلر برای دریافت آمار
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     cursor.execute('SELECT * FROM stats')
     stats_data = cursor.fetchone()
@@ -179,9 +212,9 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     else:
         await update.message.reply_text("آمار هنوز ثبت نشده است.")
 
-# تنظیم ربات و استارت هندلرها
-def main() -> None:
-    app = Application.builder().token(TELEGRAM_TOKEN).build()
+
+def main():
+    app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
