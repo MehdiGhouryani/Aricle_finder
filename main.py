@@ -59,7 +59,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data['await_doi'] = True
         await update.message.reply_text('DOI مورد نظر خود را وارد کنید:')
 
-    elif context.user_data.get('await_doi') and text != 'دریافت با کلمات کلیدی':
+    elif context.user_data.get('await_doi') and text != 'دریافت با کلمات کلیدی' or 'بخش ارسال خودکار':
         if "https://doi.org/" in user_message:
             doi = user_message.split("https://doi.org/")[-1].strip()
         else:    
@@ -74,7 +74,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data['await_keywords'] = True
         await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
 
-    elif context.user_data.get('await_keywords') and text !='دریافت با DOI':
+    elif context.user_data.get('await_keywords') and text !='دریافت با DOI' or 'بخش ارسال خودکار':
         keywords = user_message.replace(',', ' ').split()
         result = search_in_multiple_sources(' AND '.join(keywords))
         context.user_data['await_keywords'] = False
