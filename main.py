@@ -1,31 +1,27 @@
 import requests
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, JobQueue
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from scholarly import scholarly
 import sqlite3
 import logging
 
-# تنظیمات لاگ
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# توکن ربات
 TELEGRAM_TOKEN = '7821187888:AAGE4gJs0q5S2-Cbxsz67xU4yMoiY-2aOu4'
-
-# URLهای جستجو
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
 SEMANTIC_SCHOLAR_API_URL = 'https://api.semanticscholar.org/graph/v1/paper/search'
 
-# اتصال به دیتابیس SQLite
+# تنظیم پایگاه داده SQLite
 conn = sqlite3.connect('users.db', check_same_thread=False)
 cursor = conn.cursor()
 
-# ایجاد جداول دیتابیس
+# ایجاد جدول کاربران و آمار
 cursor.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, keywords TEXT)''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS stats (searches_successful INTEGER, searches_failed INTEGER)''')
 conn.commit()
 
-# تابع جستجوی مقاله با DOI از CrossRef
+# تابع برای دریافت مقاله از CrossRef با DOI
 def fetch_article_by_doi(doi: str) -> str:
     response = requests.get(f"{CROSSREF_API_URL}{doi}")
     if response.status_code == 200:
@@ -35,7 +31,7 @@ def fetch_article_by_doi(doi: str) -> str:
         return f"📚 Title: {title}\n👨‍🔬 Authors: {authors}\n🔗 DOI: {doi}\n🔗 URL: {data['message']['URL']}"
     return None
 
-# تابع جستجو در Semantic Scholar
+# تابع برای جستجوی مقاله در Semantic Scholar
 def search_articles_by_keywords_scholar(keywords: str) -> str:
     response = requests.get(f"{SEMANTIC_SCHOLAR_API_URL}?query={keywords}&limit=3")
     if response.status_code == 200:
@@ -49,7 +45,7 @@ def search_articles_by_keywords_scholar(keywords: str) -> str:
         return articles if articles else None
     return None
 
-# تابع جستجو در Google Scholar
+# تابع برای جستجو در Google Scholar
 def search_articles_by_keywords_google(keywords: str) -> str:
     search_query = scholarly.search_pubs(keywords)
     articles = ""
@@ -58,60 +54,95 @@ def search_articles_by_keywords_google(keywords: str) -> str:
         authors = result['bib'].get('author', 'Unknown')
         url = result.get('pub_url', 'No URL available')
         articles += f"📚 Title: {title}\n👨‍🔬 Authors: {authors}\n🔗 URL: {url}\n\n"
-    return articles if articles else None
+        return articles if articles else None
 
-# تابع ترکیبی برای جستجو در منابع مختلف
+# تابع برای جستجو در arXiv
+def search_arxiv(keywords: str) -> str:
+    url = f"http://export.arxiv.org/api/query?search_query=all:{keywords}&start=0&max_results=3"
+    response = requests.get(url)
+    if response.status_code == 200:
+        entries = response.text.split('<entry>')[1:]
+        articles = ""
+        for entry in entries:
+            title = entry.split('<title>')[1].split('</title>')[0]
+            authors = entry.split('<name>')[1].split('</name>')[0]
+            link = entry.split('<id>')[1].split('</id>')[0]
+            articles += f"📚 Title: {title.strip()}\n👨‍🔬 Authors: {authors.strip()}\n🔗 URL: {link}\n\n"
+        return articles if articles else "No articles found in arXiv."
+    return "Error fetching articles from arXiv."
+
+# تابع برای جستجو در PubMed
+def search_pubmed(keywords: str) -> str:
+    url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.text
+        articles = ""
+        for entry in data.split('\n\n'):
+            if 'TI  -' in entry and 'AU  -' in entry:
+                title = entry.split('TI  - ')[1].split('\n')[0]
+                author = entry.split('AU  - ')[1].split('\n')[0]
+                articles += f"📚 Title: {title.strip()}\n👨‍🔬 Authors: {author.strip()}\n\n"
+        return articles if articles else "No articles found in PubMed."
+    return "Error fetching articles from PubMed."
+
+
+
+
+
 def search_in_multiple_sources(keywords_or_doi: str) -> str:
-    # جستجو در CrossRef (برای DOI)
     if keywords_or_doi.startswith('10.'):
         result = fetch_article_by_doi(keywords_or_doi)
         if result:
             cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
             conn.commit()
             return result
-    # جستجو در Semantic Scholar
+
     result = search_articles_by_keywords_scholar(keywords_or_doi)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
-    # جستجو در Google Scholar
+
     result = search_articles_by_keywords_google(keywords_or_doi)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
-    # اگر مقاله‌ای پیدا نشود
+
+    result = search_arxiv(keywords_or_doi)
+    if result:
+        cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+        conn.commit()
+        return result
+
+    result = search_pubmed(keywords_or_doi)
+    if result:
+        cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+        conn.commit()
+        return result
+
     cursor.execute('UPDATE stats SET searches_failed = searches_failed + 1')
     conn.commit()
     return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
 
-# تابع جستجو و ارسال خودکار برای کلمات کلیدی ذخیره شده
-async def auto_send_articles(context: ContextTypes.DEFAULT_TYPE):
-    user_data = context.job.context
-    user_id = user_data['id']
-    keywords = user_data['keywords']
-    result = search_in_multiple_sources(keywords)
-    if result:
-        try:
-            await context.bot.send_message(chat_id=user_id, text=result)
-        except Exception as e:
-            logger.error(f"Error sending message to user {user_id}: {e}")
 
 
-            # هندلر شروع
+
+# هندلر شروع برای کاربر
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.message.from_user
     cursor.execute('INSERT OR IGNORE INTO users (id, username, keywords) VALUES (?, ?, ?)', (user.id, user.username, None))
     conn.commit()
+
     keyboards = [
         [KeyboardButton('دریافت با DOI'), KeyboardButton('دریافت با کلمات کلیدی')],
-        [KeyboardButton('ارسال خودکار مقالات')],
+        [KeyboardButton('بخش ارسال خودکار')],
     ]
     reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
     await update.message.reply_text('سلام به ربات مقاله یاب خوش اومدین', reply_markup=reply_markup)
 
-# هندلر برای دریافت کلمات کلیدی یا DOI
+# هندلر برای دریافت کلمات کلیدی از کاربران
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
     text = update.message.text
@@ -119,34 +150,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     if text == 'دریافت با DOI':
         context.user_data['await_doi'] = True
-        await update.message.reply_text('DOI و بفرس')
+        await update.message.reply_text('DOI مورد نظر خود را وارد کنید:')
     elif context.user_data.get('await_doi'):
         doi = user_message
         result = search_in_multiple_sources(doi)
         context.user_data['await_doi'] = False
         await update.message.reply_text(result)
+
     elif text == 'دریافت با کلمات کلیدی':
-        context.user_data['await_keyboard'] = True
-        await update.message.reply_text('کلمات کلیدی مد نظرت و با , (کاما) جدا کن و بفرست')
-    elif context.user_data.get('await_keyboard'):
-        key_art = user_message.replace(',', ' ').split()
-        result = search_in_multiple_sources(" ".join(key_art))
-        context.user_data['await_keyboard'] = False
+        context.user_data['await_keywords'] = True
+        await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
+    elif context.user_data.get('await_keywords'):
+        keywords = user_message.replace(',', ' ').split()
+        result = search_in_multiple_sources(' '.join(keywords))
+        context.user_data['await_keywords'] = False
         await update.message.reply_text(result)
-    elif text == 'ارسال خودکار مقالات':
-        await update.message.reply_text('لطفا کلمات کلیدی خود را وارد کنید تا مقالات به صورت خودکار ارسال شوند.')
-        context.user_data['await_auto_send'] = True
-    elif context.user_data.get('await_auto_send'):
-        keywords = user_message
-        cursor.execute('UPDATE users SET keywords = ? WHERE id = ?', (keywords, user_id))
-        conn.commit()
-        await update.message.reply_text(f"کلمات کلیدی شما ذخیره شد و مقالات مرتبط به صورت خودکار ارسال می‌شوند: {keywords}")
 
-        # زمان‌بندی ارسال خودکار
-        context.job_queue.run_repeating(auto_send_articles, interval=86400, first=0, context={'id': user_id, 'keywords': keywords})
-        context.user_data['await_auto_send'] = False
+    elif text == 'بخش ارسال خودکار':
+        await update.message.reply_text("این بخش در حال توسعه است.")
 
-# هندلر آمار
+# هندلر برای دریافت آمار
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     cursor.execute('SELECT * FROM stats')
     stats_data = cursor.fetchone()
@@ -156,21 +179,18 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     else:
         await update.message.reply_text("آمار هنوز ثبت نشده است.")
 
-# تابع لغو ارسال خودکار
-async def stop_auto_send(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_id = update.message.from_user.id
-    cursor.execute('UPDATE users SET keywords = NULL WHERE id = ?', (user_id,))
+# تنظیم ربات و استارت هندلرها
+def main() -> None:
+    app = Application.builder().token(TELEGRAM_TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(CommandHandler("stats", stats))
+
+    cursor.execute('INSERT OR IGNORE INTO stats (searches_successful, searches_failed) VALUES (0, 0)')
     conn.commit()
-    await update.message.reply_text("ارسال خودکار مقالات برای شما متوقف شد")
 
-
-def main():
-    app = Application.builder().token(TELEGRAM_TOKEN).build() 
-    app.add_handler(CommandHandler('start', start)) 
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)) 
-    app.add_handler(CommandHandler('stats', stats)) 
-    app.add_handler(CommandHandler('stop', stop_auto_send)) 
     app.run_polling()
 
-if __name__ == '__main__': 
+if __name__== '__main__':
     main()
