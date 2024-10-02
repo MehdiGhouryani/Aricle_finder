@@ -170,61 +170,58 @@ def search_pubmed(keywords: str) -> str:
 
 
 
-
-
-
 def search_in_multiple_sources(keywords_or_doi: str) -> str:
-    # اگر ورودی DOI باشد
     if keywords_or_doi.startswith('10.'):
         result = fetch_article_by_doi(keywords_or_doi)
-        if "متاسفم" in result:  
-            return result 
 
-        # جستجو در Sci-Hub اگر مقاله پیدا نشود
+        if 'متاسفم' in result:
+            return result
+        
+
+        
+        if result:
+            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+            conn.commit()
+            return result
+
+        # جستجو در Sci-Hub
         result = fetch_scihub_article(keywords_or_doi)
         if result:
             cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
             conn.commit()
             return result
 
-    # ترکیب کلمات کلیدی برای جستجو به صورت AND
+
+
     keywords = ' AND '.join(keywords_or_doi.split(','))
 
-    # جستجو در Semantic Scholar
     result = search_articles_by_keywords_scholar(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
-    # جستجو در Google Scholar
     result = search_articles_by_keywords_google(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
-    # جستجو در Arxiv
     result = search_arxiv(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
-    # جستجو در PubMed
     result = search_pubmed(keywords)
     if result:
         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
         conn.commit()
         return result
 
-    # اگر هیچ مقاله‌ای پیدا نشود
     cursor.execute('UPDATE stats SET searches_failed = searches_failed + 1')
     conn.commit()
     return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
-
-
-
 
 
 
