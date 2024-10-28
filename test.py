@@ -1,251 +1,139 @@
-import requests
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-import sqlite3
-import logging
+اتصال به دیتابیس SQLite
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-TOKEN = '7821187888:AAGE4gJs0q5S2-Cbxsz67xU4yMoiY-2aOu4'
-CROSSREF_API_URL = 'https://api.crossref.org/works/'
-SEMANTIC_SCHOLAR_API_URL = 'https://api.semanticscholar.org/graph/v1/paper/search'
-SCIHUB_URL = 'https://sci-hub.se/'
-
-# تنظیم پایگاه داده SQLite
-conn = sqlite3.connect('users.db', check_same_thread=False)
-cursor = conn.cursor()
-
-# ایجاد جدول کاربران و آمار
-cursor.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, keywords TEXT)''')
-cursor.execute('''CREATE TABLE IF NOT EXISTS stats (searches_successful INTEGER, searches_failed INTEGER)''')
+# ایجاد جدول‌ها
+cursor.execute('''CREATE TABLE IF NOT EXISTS article_subscribers (chat_id INTEGER PRIMARY KEY)''')
+cursor.execute('''CREATE TABLE IF NOT EXISTS news_subscribers (chat_id INTEGER PRIMARY KEY)''')
 conn.commit()
 
+ذخیره شناسه کاربر در دیتابیس
+def add_subscriber(chat_id, table):
+    conn = sqlite3.connect('subscribers.db')
+    cursor = conn.cursor()
 
-
-
-
-
-
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.message.from_user
-    cursor.execute('INSERT OR IGNORE INTO users (id, username, keywords) VALUES (?, ?, ?)', (user.id, user.username, None))
+    cursor.execute(f'INSERT OR IGNORE INTO {table} (chat_id) VALUES (?)', (chat_id,))
     conn.commit()
-
-    keyboards = [
-        [KeyboardButton('دریافت با DOI'), KeyboardButton('دریافت با کلمات کلیدی')],
-        [KeyboardButton('بخش ارسال خودکار')],
-    ]
-    reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
-    await update.message.reply_text('سلام به ربات مقاله یاب خوش اومدین', reply_markup=reply_markup)
+    conn.close()
+# حذف شناسه کاربر از دیتابیس
 
 
+def remove_subscriber(chat_id, table):
+    conn = sqlite3.connect('subscribers.db')
+    cursor = conn.cursor()
+
+    cursor.execute(f'DELETE FROM {table} WHERE chat_id = ?', (chat_id,))
+    conn.commit()
+    conn.close()
+
+
+# واکشی تمام مشترکین
+def get_subscribers(table):
+    conn = sqlite3.connect('subscribers.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(f'SELECT chat_id FROM {table}')
+    
+        subscribers=[row[0] for row in cursor.fetchall()]
+    finally:
+        conn.close()
+    
+    return subscribers
+
+# لیست کلیدواژه‌های مقالات مهندسی پزشکی
+keywords_article = [
+
+    "Biomaterials", "Bioinformatics", "Biomedical Imaging", "Biomimetics", 
+    "Tissue Engineering", "Medical Devices", "Neuroengineering", "Biosensors", 
+    "Bioprinting", "Clinical Engineering", "Rehabilitation Engineering", 
+    "Bioelectrics", "Biomechanics", "Nanomedicine", "Regenerative Medicine", 
+    "Biomedical Signal Processing", "Medical Robotics", "Wearable Health Technology", 
+    "Telemedicine", "Cardiovascular Engineering", "Orthopaedic Bioengineering", 
+    "Prosthetics and Implants", "Artificial Organs", "Cancer Bioengineering", 
+    "Biomedical Data Science", "Biophotonics", "Medical Imaging Informatics", 
+    "Robotic Surgery", "Wearable Sensors", "Digital Health", "Biomedical Optics", 
+    "Point-of-Care Diagnostics", "Cardiac Engineering", "Personalized Medicine", 
+    "Gene Therapy"
+
+]
+
+TARGET = '@Articles_studentsBme'  # کانال آرشیو مقالات
+
+# تابع ارسال مقاله به کاربران
+async def send_article(context: CallbackContext):
+    selected_keyword = random.choice(keywords_article)
+    search_query = scholarly.search_pubs(selected_keyword)
+    articles = [next(search_query) for _ in range(5)]
+    random_article = random.choice(articles)
 
 
 
+    abstract = random_article['bib'].get('abstract', 'No abstract available')
+
+    result = f"📚 {random_article['bib']['title']}\n" \
+             f"👨‍🔬 Author(s): {', '.join(random_article['bib']['author'])}\n" \
+             f"📅 Year: {random_article['bib'].get('pub_year', 'Unknown')}\n" \
+             f"🔗 [Link to Article]({random_article.get('pub_url', '#')})\n\n\n" \
+             f"Abstract:\n{abstract}\n\n" \
+                "--"
+
+    try:
+        # ارسال به کاربران
+        subscribers = get_subscribers('article_subscribers')
+        for user_id in subscribers:
+            await context.bot.send_message(chat_id=user_id, text=result, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+
+        # ارسال به کانال آرشیو
+        await context.bot.send_message(chat_id=TARGET, text=result, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+    
+    except Exception as e:
+        print(f"ERROR : {e}")
 
 
+    try:
+        genai.configure(api_key=gen_token)
 
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        content = f"""لطفا این مقاله رو به شکل خیلی خوب و با جزيیات بررسی کن و برداشت هات رو به شکل زبان عامیانه فارسی به‌طور کامل شرح بده بطور علمی و دقیق با فرمولها و دلایل حرفه‌ای و دقیقا توضیح بده این مقاله رو.
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_id = update.message.from_user.id
-    text = update.message.text
-    user_message = update.message.text
+لینک مقاله و خلاصه‌ای ازش: {result}
+دقت کن حدود 8 تا 12 خط باشه توضیحاتت
+لطفا انتهای پست هم رفرنس بزار 
+"""
+        response = await model.generate_content(content)
+        text_ai = response.replace("#", "")
 
-    if text == 'دریافت با DOI':
-        context.user_data['await_doi'] = True
-        context.user_data['await_keywords'] = False 
-        await update.message.reply_text('DOI مورد نظر خود را وارد کنید:')
+        subscribers = get_subscribers('article_subscribers')
+        for user_id in subscribers:
+            await context.bot.send_message(chat_id=user_id, text=text_ai, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
-    elif context.user_data.get('await_doi') and text not in ['دریافت با کلمات کلیدی', 'بخش ارسال خودکار']:
-        if "https://doi.org/" in user_message:
-            doi = user_message.split("https://doi.org/")[-1].strip()
-        else:    
-            doi = user_message
-        result = search_in_multiple_sources(doi)
-        context.user_data['await_doi'] = False
-        await update.message.reply_text(result)
-
-    elif text == 'دریافت با کلمات کلیدی':
-        context.user_data['await_keywords'] = True
-        context.user_data['await_doi'] = False  
-        await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
-
-    elif context.user_data.get('await_keywords') and text not in ['دریافت با DOI', 'بخش ارسال خودکار']:
-        keywords = user_message.replace(',', ' ').split()
-        result = search_in_multiple_sources(' AND '.join(keywords))
-        context.user_data['await_keywords'] = False
-        await update.message.reply_text(result)
-
-    elif text == 'بخش ارسال خودکار':
-        await update.message.reply_text("این بخش در حال توسعه است.")
-
-
-
-
-
-# تابع برای دریافت مقاله از CrossRef با DOI
-def fetch_article_by_doi(doi: str) -> str:
-    response = requests.get(f"{CROSSREF_API_URL}{doi}")
-    if response.status_code == 200:
-        data = response.json()
-        title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
-        authors = data['message'].get('author', [])
-        
-        author_names = []
-        for author in authors:
-            given = author.get('given', 'ناشناخته')
-            family = author.get('family', '')
-            author_names.append(f"{given} {family}".strip())
-        
-        authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
-        return f"📚 Title: {title}\n👨‍🔬 Authors: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {data['message'].get('URL', 'لینکی موجود نیست')}"
-    else:
-        return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
+        # ارسال به کانال آرشیو
+        await context.bot.send_message(chat_id=TARGET, text=text_ai, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
     
 
 
 
-# تابع برای جستجوی مقاله در Sci-Hub با DOI
-def fetch_scihub_article(doi: str) -> str:
-    url = f"{SCIHUB_URL}{doi}"
-    return f"📰 مقاله‌ای با DOI: {doi} در Sci-Hub موجود است. می‌توانید از این لینک مشاهده کنید: {url}"
-
-# تابع برای جستجوی مقاله در Semantic Scholar
-def search_articles_by_keywords_scholar(keywords: str) -> str:
-    response = requests.get(f"{SEMANTIC_SCHOLAR_API_URL}?query={keywords}&limit=3")
-    if response.status_code == 200:
-        data = response.json()
-        articles = ""
-        for paper in data['data']:
-            title = paper['title']
-            authors = ', '.join(paper['authors'])
-            url = paper['url']
-            articles += f"📚 Title: {title}\n👨‍🔬 Authors: {authors}\n🔗 URL: {url}\n\n"
-        return articles if articles else None
-    return None
-
-# تابع برای جستجو در Google Scholar
-def search_articles_by_keywords_google(keywords: str) -> str:
-    search_query = scholarly.search_pubs(keywords)
-    articles = ""
-    for result in search_query:
-        title = result['bib']['title']
-        authors = result['bib'].get('author', 'Unknown')
-        url = result.get('pub_url', 'No URL available')
-        articles += f"📚 Title: {title}\n👨‍🔬 Authors: {authors}\n🔗 URL: {url}\n\n"
-        return articles if articles else None
-
-# تابع برای جستجو در arXiv
-def search_arxiv(keywords: str) -> str:
-    url = f"http://export.arxiv.org/api/query?search_query=all:{keywords}&start=0&max_results=3"
-    response = requests.get(url)
-    if response.status_code == 200:
-        entries = response.text.split('<entry>')[1:]
-        articles = ""
-        for entry in entries:
-            title = entry.split('<title>')[1].split('</title>')[0]
-            authors = entry.split('<name>')[1].split('</name>')[0]
-            link = entry.split('<id>')[1].split('</id>')[0]
-            articles += f"📚 Title: {title.strip()}\n👨‍🔬 Authors: {authors.strip()}\n🔗 URL: {link}\n\n"
-        return articles if articles else "No articles found in arXiv."
-    return "Error fetching articles from arXiv."
-
-
-def search_pubmed(keywords: str) -> str:
-    url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.text
-        articles = ""
-        for entry in data.split('\n\n'):
-            if 'TI  -' in entry and 'AU  -' in entry:
-                title = entry.split('TI  - ')[1].split('\n')[0]
-                author = entry.split('AU  - ')[1].split('\n')[0]
-                articles += f"📚 Title: {title.strip()}\n👨‍🔬 Authors: {author.strip()}\n\n"
-        return articles if articles else "No articles found in PubMed."
-    return "Error fetching articles from PubMed."
+    except Exception as e:
+        print(f"ERROR : {e}")
 
 
 
-def search_in_multiple_sources(keywords_or_doi: str) -> str:
-    if keywords_or_doi.startswith('10.'):
-        result = fetch_article_by_doi(keywords_or_doi)
 
-        if 'متاسفم' in result:
-            return result
-        
 
-        
-        if result:
-            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-            conn.commit()
-            return result
+# عضویت در بخش مقالات
+async def subscribe(update: Update, context: CallbackContext):
+    user_id = update.effective_user.id
+    
+    add_subscriber(user_id, 'article_subscribers')
+    context.job_queue.run_repeating(send_article, interval=10000, first=0)  
+    await update.message.reply_text("شما با موفقیت عضو بخش مقالات مهندسی پزشکی شدید ✅")
 
-        # جستجو در Sci-Hub
-        result = fetch_scihub_article(keywords_or_doi)
-        if result:
-            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-            conn.commit()
-            return result
+# لغو عضویت در بخش مقالات
+async def unsubscribe(update: Update, context: CallbackContext):
+    user_id = update.effective_user.id
+
+    remove_subscriber(user_id, 'article_subscribers')
+    await update.message.reply_text("عضویت شما لغو شد. دیگر مقالاتی دریافت نخواهید کرد.")
 
 
 
-    keywords = ' AND '.join(keywords_or_doi.split(','))
-
-    result = search_articles_by_keywords_scholar(keywords)
-    if result:
-        cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-        conn.commit()
-        return result
-
-    result = search_articles_by_keywords_google(keywords)
-    if result:
-        cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-        conn.commit()
-        return result
-
-    result = search_arxiv(keywords)
-    if result:
-        cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-        conn.commit()
-        return result
-
-    result = search_pubmed(keywords)
-    if result:
-        cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-        conn.commit()
-        return result
-
-    cursor.execute('UPDATE stats SET searches_failed = searches_failed + 1')
-    conn.commit()
-    return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
-
-
-
-async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    cursor.execute('SELECT * FROM stats')
-    stats_data = cursor.fetchone()
-    if stats_data:
-        searches_successful, searches_failed = stats_data
-        await update.message.reply_text(f"📊 آمار جستجو:\n✅ جستجوهای موفق: {searches_successful}\n❌ جستجوهای ناموفق: {searches_failed}")
-    else:
-        await update.message.reply_text("آمار هنوز ثبت نشده است.")
-
-
-def main():
-    app = Application.builder().token(TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.add_handler(CommandHandler("stats", stats))
-
-    cursor.execute('INSERT OR IGNORE INTO stats (searches_successful, searches_failed) VALUES (0, 0)')
-    conn.commit()
-
-    app.run_polling()
-
-if __name__== '__main__':
-    main()
