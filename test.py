@@ -11,8 +11,8 @@ def createor():
     لطفا انتهای پست هم رفرنس بزار 
     """
         response = model.generate_content(content)
-        text_ai = response.replace("#", "")
-        print(text_ai)
+        # text_ai = response.replace("#", "")
+        print(response)
     
 
     except Exception as e:
