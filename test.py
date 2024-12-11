@@ -17,3 +17,6 @@ def createor():
 
     except Exception as e:
         print(f"ERROR   :   {e}")
+
+
+createor()
