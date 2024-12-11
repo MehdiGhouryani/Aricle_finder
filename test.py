@@ -2,7 +2,7 @@ import google.generativeai as genai
 
 def createor():
     try:
-        genai.configure(api_key="AIzaSyDNQ2xrn3IjrrDVx7Y4vgxfRrLxTrOm_5w")
+        genai.configure(api_key="AIzaSyCEVrQ9LA0LM9qMgxKfj8ZzJE2Ktmu7K6I")
         model = genai.GenerativeModel("gemini-1.5-flash")
         content = f"""لطفا این مقاله رو به شکل خیلی خوب و با جزيیات بررسی کن و برداشت هات رو به شکل زبان عامیانه فارسی به‌طور کامل شرح بده بطور علمی و دقیق با فرمولها و دلایل حرفه‌ای و دقیقا توضیح بده این مقاله رو.
 
