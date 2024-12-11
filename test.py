@@ -11,12 +11,12 @@ def createor():
     لطفا انتهای پست هم رفرنس بزار 
     """
         response = model.generate_content(content)
-        # text_ai = response.replace("#", "")
-        print(response)
-    
+
+        # استخراج متن از پاسخ
+        generated_text = response.result.candidates[0].content.parts[0].text
+        print(generated_text)
 
     except Exception as e:
         print(f"ERROR   :   {e}")
-
 
 createor()
