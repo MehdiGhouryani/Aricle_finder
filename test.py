@@ -13,11 +13,11 @@ def createor():
         response = model.generate_content(content)
 
         # بررسی ساختار پاسخ
-        print(response)  # این خط برای بررسی ساختار پاسخ است
+        print(response.text)  # این خط برای بررسی ساختار پاسخ است
 
         # فرض بر این است که محتوای تولید شده در response موجود است
-        generated_text = response.candidates[0].content
-        print(generated_text)
+        # generated_text = response.candidates[0].content
+        # print(generated_text)
 
     except Exception as e:
         print(f"ERROR   :   {e}")
