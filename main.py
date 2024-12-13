@@ -12,7 +12,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s', level=loggi
 logger = logging.getLogger(__name__)
 
 
-TOKEN = os.getenv('7821187888:AAGE4gJs0q5S2-Cbxsz67xU4yMoiY-2aOu4')
+TOKEN = os.getenv('token')
 
 
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
