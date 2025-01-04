@@ -9,24 +9,90 @@ SEMANTIC_SCHOLAR_API_URL = 'https://api.semanticscholar.org/graph/v1/paper/searc
 
 
 
+from telegram import Update, Bot
+from telegram.ext import ContextTypes
+from services.file_service import download_pdf, send_file_to_user
+import os
 
-async def fetch_article_by_doi(doi: str) -> str:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{CROSSREF_API_URL}{doi}") as response:
-            if response.status == 200:
-                data = await response.json()
-                title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
-                authors = data['message'].get('author', [])
+async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,doi):
 
-                author_names = [f"{author.get('given', 'ناشناخته')} {author.get('family', '')}".strip() for author in authors]
-                authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
+    user_id = update.message.chat_id
+    doi = doi.strip()
 
-                pdf_link = data['message'].get('URL', 'لینکی موجود نیست')
-                return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}"
+    try:
+        if not doi.startswith("10."):
+            await update.message.reply_text("لطفاً یک DOI معتبر وارد کنید.")
+            return
 
-            return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
+        # جستجوی لینک PDF و صفحه ناشر
+        article_data = await fetch_pdf_link_by_doi(doi)
+
+        if article_data["message"] == "Open Access":
+            pdf_link = article_data["pdf_link"]
+
+            # دانلود فایل PDF
+            file_path = await download_pdf(pdf_link, user_id)
+
+
+            await send_file_to_user(file_path, user_id, context.bot)
+
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                print(f"Error deleting file {file_path}: {e}")
+
+        else:
+            # نمایش لینک صفحه ناشر در صورت عدم دسترسی Open Access
+            publisher_page = article_data.get("publisher_page", "هیچ لینکی برای این مقاله یافت نشد.")
+            await update.message.reply_text(
+                f"این مقاله Open Access نیست.\n🔗 لینک صفحه ناشر: {publisher_page}"
+            )
+
+    except Exception as e:
+        print(f"Error in handling DOI request: {e}")
+        await update.message.reply_text(f"خطایی رخ داد: {e}\nلطفاً دوباره تلاش کنید.")
+
+
+
+
+# async def fetch_article_by_doi(doi: str) -> str:
+#     async with aiohttp.ClientSession() as session:
+#         async with session.get(f"{CROSSREF_API_URL}{doi}") as response:
+#             if response.status == 200:
+#                 data = await response.json()
+#                 title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
+#                 authors = data['message'].get('author', [])
+
+#                 author_names = [f"{author.get('given', 'ناشناخته')} {author.get('family', '')}".strip() for author in authors]
+#                 authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
+
+#                 pdf_link = data['message'].get('URL', 'لینکی موجود نیست')
+#                 return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}"
+
+#             return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
         
 
+
+
+UNPAYWALL_API_URL = "https://api.unpaywall.org/v2/"
+EMAIL_FOR_UNPAYWALL = "mohammadmahdi670@gmail.com"  # ایمیل ثبت‌شده در Unpaywall
+
+async def fetch_pdf_link_by_doi(doi: str) -> dict:
+    """
+    جستجوی DOI در Unpaywall برای دریافت لینک PDF مقاله
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{UNPAYWALL_API_URL}{doi}?email={EMAIL_FOR_UNPAYWALL}") as response:
+            if response.status == 200:
+                data = await response.json()
+                pdf_link = data.get('best_oa_location', {}).get('url_for_pdf')
+                publisher_page = data.get('best_oa_location', {}).get('url')
+                return {
+                    "pdf_link": pdf_link or None,
+                    "publisher_page": publisher_page or None,
+                    "message": "Open Access" if pdf_link else "Not Open Access"
+                }
+            return {"message": "DOI not found"}
 
 
 
@@ -35,93 +101,23 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
     conn = get_connection()
     cursor = conn.cursor()
 
-    if keywords_or_doi.startswith('10.'):
-        result = await fetch_article_by_doi(keywords_or_doi)
-        if result:
-            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-            conn.commit()
-            return result
-
-
-        result = fetch_scihub_article(keywords_or_doi)
-        if result:
-            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-            conn.commit()
-            return result
-    else:
-        keywords = ' AND '.join(keywords_or_doi.split(','))
-        # result = await search_articles_by_keywords_scholar(keywords)
-        # if result:
-        #     cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-        #     conn.commit()
-        #     return result
-
+    keywords = ' AND '.join(keywords_or_doi.split(','))
+    try:
         result = await search_articles_by_keywords_google(keywords)
         if result:
             cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
             conn.commit()
             return result
-
         result = await search_pubmed(keywords)
         if result:
             cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
             conn.commit()
             return result
-
-    cursor.execute('UPDATE stats SET searches_failed = searches_failed + 1')
-    conn.commit()
-    return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
-
-
-
-async def search_articles_by_keywords_scholar(keywords: str) -> str:
-    try:
-        url = f"{SEMANTIC_SCHOLAR_API_URL}?query={keywords}&limit=3"
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-
-                    articles = ""
-                    for idx, paper in enumerate(data.get('data', []), start=1):
-                        title = paper.get('title', 'عنوانی یافت نشد')
-
-                        # مدیریت نویسندگان
-                        authors_list = paper.get('authors', [])
-                        if authors_list:
-                            authors = ', '.join(
-                                f"{author.get('firstName', '')} {author.get('lastName', '')}".strip()
-                                for author in authors_list
-                            )
-                            if not authors.strip():
-                                authors = "نویسندگان ناشناس"
-                        else:
-                            authors = "نویسندگان ناشناس"
-
-                        # مدیریت لینک
-                        url = paper.get('url')
-                        if not url:
-                            doi = paper.get('externalIds', {}).get('DOI', None)
-                            if doi:
-                                url = f"https://doi.org/{doi}"
-                            else:
-                                url = "لینکی موجود نیست"
-
-                        # افزودن به خروجی
-                        articles += (
-                            f"🔹 مقاله شماره {idx}:\n"
-                            f"📚 عنوان: {title}\n"
-                            f"👨‍🔬 نویسندگان: {authors}\n"
-                            f"🔗 URL: {url}\n\n"
-                        )
-
-                    return articles if articles else "مقاله‌ای یافت نشد."
-
-                else:
-                    return f"خطا در دریافت داده‌ها. کد وضعیت: {response.status}"
+        cursor.execute('UPDATE stats SET searches_failed = searches_failed + 1')
+        conn.commit()
+        return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
     except Exception as e:
-        return f"خطایی رخ داد: {str(e)}"
+        print(f"ERROR IN SEARCH MULTIPLE SOURCE  ======> {e}")
 
 
 async def search_articles_by_keywords_google(keywords: str) -> str:
@@ -130,7 +126,7 @@ async def search_articles_by_keywords_google(keywords: str) -> str:
         search_query = scholarly.search_pubs(keywords)
         
         articles = ""
-        max_results = 5  # محدودیت تعداد نتایج
+        max_results = 4  # محدودیت تعداد نتایج
         count = 0
 
         for result in search_query:
@@ -204,3 +200,7 @@ async def search_pubmed(keywords: str) -> str:
                         author = entry.split('AU  - ')[1].split('\n')[0]
                         articles += f"📚 عنوان: {title.strip()}\n👨‍🔬 نویسندگان: {author.strip()}\n\n"
                 return articles if articles else "مقاله‌ای یافت نشد."
+
+
+
+
