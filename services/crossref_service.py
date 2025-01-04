@@ -28,15 +28,17 @@ async def fetch_article_by_doi(doi: str) -> str:
 
 
 async def search_in_multiple_sources(keywords_or_doi: str) -> str:
-    if keywords_or_doi.startswith('10.'):
+    try:
+        if keywords_or_doi.startswith('10.'):
 
-        result = await fetch_article_by_doi(keywords_or_doi)
-        return result
-    else:
+            result = await fetch_article_by_doi(keywords_or_doi)
+            return result
+        else:
 
-        result = await search_articles_by_keywords(keywords_or_doi)
-        return result
-    
+            result = await search_articles_by_keywords_google(keywords_or_doi)
+            return result
+    except Exception as e:
+        print(e)
 
 
 
