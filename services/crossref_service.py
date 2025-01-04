@@ -40,10 +40,8 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
                 print(f"Error deleting file {file_path}: {e}")
 
         else:
-            publisher_page = article_data.get("publisher_page", "هیچ لینکی برای این مقاله یافت نشد.")
-            await update.message.reply_text(
-                f"این مقاله Open Access نیست.\n🔗 لینک صفحه ناشر: {publisher_page}"
-            )
+            await context.bot.send_message("مقاله برای دانلود در دسترس نیست !")
+            await fetch_pdf_link_by_doi(doi)
 
     except Exception as e:
         print(f"Error in handling DOI request: {e}")
@@ -52,21 +50,21 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 
 
-# async def fetch_article_by_doi(doi: str) -> str:
-#     async with aiohttp.ClientSession() as session:
-#         async with session.get(f"{CROSSREF_API_URL}{doi}") as response:
-#             if response.status == 200:
-#                 data = await response.json()
-#                 title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
-#                 authors = data['message'].get('author', [])
+async def fetch_article_by_doi(doi: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{CROSSREF_API_URL}{doi}") as response:
+            if response.status == 200:
+                data = await response.json()
+                title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
+                authors = data['message'].get('author', [])
 
-#                 author_names = [f"{author.get('given', 'ناشناخته')} {author.get('family', '')}".strip() for author in authors]
-#                 authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
+                author_names = [f"{author.get('given', 'ناشناخته')} {author.get('family', '')}".strip() for author in authors]
+                authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
 
-#                 pdf_link = data['message'].get('URL', 'لینکی موجود نیست')
-#                 return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}"
+                pdf_link = data['message'].get('URL', 'لینکی موجود نیست')
+                return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}"
 
-#             return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
+            return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
         
 
 
