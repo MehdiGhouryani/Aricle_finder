@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import MessageHandler, filters,ContextTypes
 from database import get_connection
-from services.crossref_service import fetch_article_by_doi,search_in_multiple_sources
+from services.crossref_service import search_in_multiple_sources,handle_doi_request
 # from services.scihub_service import fetch_scihub_article
 from handlers.stats_handler import update_user_state,get_user_state
 
@@ -42,7 +42,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
             else:
                 doi = text
 
-            result = await fetch_article_by_doi(doi)
+            result = await handle_doi_request(update,context,doi)
             await update.message.reply_text(result)
             # update_user_state(user_id, None)
             context.user_data["awaiting_doi"] = None
