@@ -1,19 +1,51 @@
-import aiohttp
+
 from telegram import Bot
 
-async def download_pdf(pdf_url: str, user_id: int) -> str:
+import aiofiles
+import aiohttp
+import os
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(pdf_url) as response:
-            if response.status == 200:
-                file_path = f"/tmp/article_{user_id}.pdf"
-                with open(file_path, 'wb') as file:
-                    file.write(await response.read())
-                return file_path
-            raise Exception("Failed to download the PDF.")
+async def download_pdf(pdf_url: str, user_id: int) -> str:
+    """
+    دانلود PDF از URL و ذخیره در یک مسیر موقت
+    """
+    file_name = f"article_{user_id}.pdf"
+    file_path = os.path.join("/tmp", file_name)
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(pdf_url) as response:
+                if response.status == 200:
+                    async with aiofiles.open(file_path, mode='wb') as file:
+                        await file.write(await response.read())
+                    return file_path
+                elif response.status == 404:
+                    raise FileNotFoundError("فایل PDF یافت نشد.")
+                else:
+                    raise Exception(f"خطای HTTP {response.status}: دانلود PDF ناموفق بود.")
+    except aiohttp.ClientError as e:
+        raise Exception(f"خطای ارتباط با سرور: {e}")
+    except Exception as e:
+        raise Exception(f"خطای عمومی هنگام دانلود PDF: {e}")
+    
 
 async def send_file_to_user(file_path: str, user_id: int, bot: Bot) -> None:
     """
-    ارسال فایل PDF دانلودشده به کاربر در تلگرام
+    ارسال فایل دانلودشده به کاربر در تلگرام و مدیریت فایل‌های موقت
     """
-    await bot.send_document(chat_id=user_id, document=open(file_path, 'rb'))
+    try:
+        if not os.path.exists(file_path):
+            raise FileNotFoundError("فایل برای ارسال یافت نشد.")
+
+        async with aiofiles.open(file_path, mode='rb') as file:
+            await bot.send_document(chat_id=user_id, document=file)
+
+    except Exception as e:
+        raise Exception(f"خطا در ارسال فایل به کاربر: {e}")
+    finally:
+        # حذف فایل پس از ارسال
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"خطا در حذف فایل موقت: {e}")
