@@ -1,4 +1,6 @@
 import aiohttp
+from scholarly import scholarly
+
 
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
 
@@ -35,6 +37,21 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
         result = await search_articles_by_keywords(keywords_or_doi)
         return result
     
+
+
+
+
+async def search_articles_by_keywords_google(keywords: str) -> str:
+    search_query = scholarly.search_pubs(keywords)
+    articles = ""
+    for result in search_query:
+        title = result['bib']['title']
+        authors = result['bib'].get('author', 'Unknown')
+        url = result.get('pub_url', 'No URL available')
+        articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
+        return articles if articles else "مقاله‌ای یافت نشد."
+
+
 
 
 

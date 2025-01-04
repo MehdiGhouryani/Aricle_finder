@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import MessageHandler, filters
 from database import get_connection
 from services.crossref_service import fetch_article_by_doi,search_in_multiple_sources
-from services.scihub_service import fetch_scihub_article
+# from services.scihub_service import fetch_scihub_article
 from handlers.stats_handler import update_user_state,get_user_state
 
 
@@ -27,8 +27,8 @@ async def handle_message(update: Update, context):
         await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
 
 
-    elif text == ' ارسال خودکار مقالات ':
-        await manage_auto_article_sending(update,context)
+    # elif text == ' ارسال خودکار مقالات ':
+    #     await manage_auto_article_sending(update,context)
 
 
 
