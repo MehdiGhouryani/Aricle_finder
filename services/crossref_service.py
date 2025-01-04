@@ -73,19 +73,31 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
     return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
 
 
-
 async def search_articles_by_keywords_scholar(keywords: str) -> str:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{SEMANTIC_SCHOLAR_API_URL}?query={keywords}&limit=3") as response:
-            if response.status == 200:
-                data = await response.json()
-                articles = ""
-                for paper in data['data']:
-                    title = paper['title']
-                    authors = ', '.join(paper['authors'])
-                    url = paper['url']
-                    articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
-                return articles if articles else "مقاله‌ای یافت نشد."
+    try:
+        # ساخت URL با پارامترهای امن
+        url = f"{SEMANTIC_SCHOLAR_API_URL}?query={keywords}&limit=3"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+
+                    articles = ""
+                    for paper in data.get('data', []):  # بررسی وجود کلید 'data'
+                        title = paper.get('title', 'عنوانی یافت نشد')
+                        authors_list = paper.get('authors', [])
+                        authors = ', '.join(authors_list) if authors_list else 'نویسندگان نامشخص'
+                        url = paper.get('url', 'لینکی موجود نیست')
+
+                        articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
+
+                    return articles if articles else "مقاله‌ای یافت نشد."
+
+                else:
+                    return f"خطا در دریافت داده‌ها. کد وضعیت: {response.status}"
+    except Exception as e:
+        return f"خطایی رخ داد: {str(e)}"
 
 
 
