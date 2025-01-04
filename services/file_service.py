@@ -38,25 +38,13 @@ async def download_pdf(pdf_url: str, user_id: int) -> str:
         raise Exception(f"خطای عمومی هنگام دانلود PDF: {e}")
 
 
-
-
 async def send_file_to_user(file_path: str, user_id: int, bot: Bot) -> None:
     """
-    ارسال فایل دانلودشده به کاربر در تلگرام و مدیریت فایل‌های موقت
+    ارسال فایل PDF دانلودشده به کاربر در تلگرام
     """
     try:
-        if not os.path.exists(file_path):
-            raise FileNotFoundError("فایل برای ارسال یافت نشد.")
-
-        async with aiofiles.open(file_path, mode='rb') as file:
+        # باز کردن فایل به صورت صحیح برای ارسال
+        with open(file_path, 'rb') as file:
             await bot.send_document(chat_id=user_id, document=file)
-
     except Exception as e:
         raise Exception(f"خطا در ارسال فایل به کاربر: {e}")
-    finally:
-        # حذف فایل پس از ارسال
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-        except Exception as e:
-            print(f"خطا در حذف فایل موقت: {e}")

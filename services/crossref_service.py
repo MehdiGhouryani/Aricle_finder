@@ -24,13 +24,11 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
             await update.message.reply_text("لطفاً یک DOI معتبر وارد کنید.")
             return
 
-        # جستجوی لینک PDF و صفحه ناشر
         article_data = await fetch_pdf_link_by_doi(doi)
 
         if article_data["message"] == "Open Access":
             pdf_link = article_data["pdf_link"]
 
-            # دانلود فایل PDF
             file_path = await download_pdf(pdf_link, user_id)
 
 
@@ -42,7 +40,6 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
                 print(f"Error deleting file {file_path}: {e}")
 
         else:
-            # نمایش لینک صفحه ناشر در صورت عدم دسترسی Open Access
             publisher_page = article_data.get("publisher_page", "هیچ لینکی برای این مقاله یافت نشد.")
             await update.message.reply_text(
                 f"این مقاله Open Access نیست.\n🔗 لینک صفحه ناشر: {publisher_page}"
