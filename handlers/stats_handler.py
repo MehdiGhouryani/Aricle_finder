@@ -19,7 +19,7 @@ stats_handler = CommandHandler('stats', stats)
 
 
 
-def update_user_state(user_id, state):
+async def update_user_state(user_id, state):
     conn = get_connection()
     cursor = conn.cursor()
  

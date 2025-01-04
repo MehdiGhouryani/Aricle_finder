@@ -49,7 +49,7 @@ async def handle_message(update: Update, context):
             result = await search_in_multiple_sources(' AND '.join(keywords))
 
             await update.message.reply_text(result)
-            update_user_state(user_id, None)
+            await update_user_state(user_id, None)
     
         conn.commit()
         conn.close()
