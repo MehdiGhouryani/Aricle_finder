@@ -3,7 +3,7 @@ from handlers.start_handler import start_handler
 from handlers.message_handler import message_handler
 from handlers.stats_handler import stats_handler
 from handlers.auto_article_handler import auto_article_task
-from scheduler import start_scheduler
+# from scheduler import start_scheduler
 from database import init_db
 import os
 
@@ -20,7 +20,7 @@ def main():
     app.add_handler(stats_handler)
 
 
-    start_scheduler(auto_article_task)
+    # start_scheduler(auto_article_task)
 
     app.run_polling()
 
