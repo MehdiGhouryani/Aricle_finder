@@ -16,46 +16,45 @@ async def handle_message(update: Update, context):
 
     conn = get_connection()
     cursor = conn.cursor()
-
-    if text == 'دریافت با DOI':
-        cursor.execute('UPDATE users SET state = ? WHERE id = ?', ('awaiting_doi', user_id))
-        await update.message.reply_text('لطفاً DOI مورد نظر خود را وارد کنید:')
-
-        
-    elif text == 'دریافت با کلمات کلیدی':
-        cursor.execute('UPDATE users SET state = ? WHERE id = ?', ('awaiting_keywords', user_id))
-        await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
+    try:
+        if text == 'دریافت با DOI':
+            cursor.execute('UPDATE users SET state = ? WHERE id = ?', ('awaiting_doi', user_id))
+            await update.message.reply_text('لطفاً DOI مورد نظر خود را وارد کنید:')
 
 
-    # elif text == ' ارسال خودکار مقالات ':
-    #     await manage_auto_article_sending(update,context)
+        elif text == 'دریافت با کلمات کلیدی':
+            cursor.execute('UPDATE users SET state = ? WHERE id = ?', ('awaiting_keywords', user_id))
+            await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
 
 
+        # elif text == ' ارسال خودکار مقالات ':
+        #     await manage_auto_article_sending(update,context)
 
 
 
-    elif state == 'awaiting_doi':
-        if "https://doi.org/" in text:
-            doi = text.split("https://doi.org/")[-1].strip()
-        else:
-            doi = text
+
+
+        elif state == 'awaiting_doi':
+            if "https://doi.org/" in text:
+                doi = text.split("https://doi.org/")[-1].strip()
+            else:
+                doi = text
+
+            result = await fetch_article_by_doi(doi)
+            await update.message.reply_text(result)
+            update_user_state(user_id, None)
+
+        elif state == 'awaiting_keywords':
+            keywords = [keyword.strip() for keyword in text.replace(',', ' ').split() if keyword.strip()]
+            result = await search_in_multiple_sources(' AND '.join(keywords))
+
+            await update.message.reply_text(result)
+            update_user_state(user_id, None)
     
-        result = await fetch_article_by_doi(doi)
-        await update.message.reply_text(result)
-        update_user_state(user_id, None)
-
-    elif state == 'awaiting_keywords':
-        keywords = [keyword.strip() for keyword in text.replace(',', ' ').split() if keyword.strip()]
-        result = await search_in_multiple_sources(' AND '.join(keywords))
-
-        await update.message.reply_text(result)
-        update_user_state(user_id, None)
-
-    else:
-        await update.message.reply_text('دستور نامعتبر!')
-
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"ERROR IN MESSAGE HANDLER ------------> {e}")
 
 message_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
 
