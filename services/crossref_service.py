@@ -73,9 +73,9 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
     return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
 
 
+
 async def search_articles_by_keywords_scholar(keywords: str) -> str:
     try:
-        # ساخت URL با پارامترهای امن
         url = f"{SEMANTIC_SCHOLAR_API_URL}?query={keywords}&limit=3"
 
         async with aiohttp.ClientSession() as session:
@@ -84,13 +84,37 @@ async def search_articles_by_keywords_scholar(keywords: str) -> str:
                     data = await response.json()
 
                     articles = ""
-                    for paper in data.get('data', []):  # بررسی وجود کلید 'data'
+                    for idx, paper in enumerate(data.get('data', []), start=1):
                         title = paper.get('title', 'عنوانی یافت نشد')
-                        authors_list = paper.get('authors', [])
-                        authors = ', '.join(authors_list) if authors_list else 'نویسندگان نامشخص'
-                        url = paper.get('url', 'لینکی موجود نیست')
 
-                        articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
+                        # مدیریت نویسندگان
+                        authors_list = paper.get('authors', [])
+                        if authors_list:
+                            authors = ', '.join(
+                                f"{author.get('firstName', '')} {author.get('lastName', '')}".strip()
+                                for author in authors_list
+                            )
+                            if not authors.strip():
+                                authors = "نویسندگان ناشناس"
+                        else:
+                            authors = "نویسندگان ناشناس"
+
+                        # مدیریت لینک
+                        url = paper.get('url')
+                        if not url:
+                            doi = paper.get('externalIds', {}).get('DOI', None)
+                            if doi:
+                                url = f"https://doi.org/{doi}"
+                            else:
+                                url = "لینکی موجود نیست"
+
+                        # افزودن به خروجی
+                        articles += (
+                            f"🔹 مقاله شماره {idx}:\n"
+                            f"📚 عنوان: {title}\n"
+                            f"👨‍🔬 نویسندگان: {authors}\n"
+                            f"🔗 URL: {url}\n\n"
+                        )
 
                     return articles if articles else "مقاله‌ای یافت نشد."
 
