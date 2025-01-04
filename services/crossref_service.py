@@ -41,7 +41,7 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
         else:
             await context.bot.send_message("مقاله برای دانلود در دسترس نیست !")
-            result = await fetch_pdf_link_by_doi(doi)
+            result = await fetch_article_by_doi(doi)
             await update.message.reply_text(result)
 
     except Exception as e:
