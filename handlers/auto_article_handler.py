@@ -3,8 +3,8 @@ from database import get_connection
 from services.crossref_service import search_articles_by_keywords
 import os
 
-TOKEN = os.getenv('TOKEN')
-
+# TOKEN = os.getenv('TOKEN')
+TOKEN ="7821187888:AAFCIAOfgZ6b9Jf7fOPI5Us0suzavuskXkg"
 async def auto_article_task():
     conn = get_connection()
     cursor = conn.cursor()

@@ -7,7 +7,8 @@ from handlers.auto_article_handler import auto_article_task
 from database import init_db
 import os
 
-TOKEN = os.getenv('TOKEN')
+# TOKEN = os.getenv('TOKEN')
+TOKEN ="7821187888:AAFCIAOfgZ6b9Jf7fOPI5Us0suzavuskXkg"
 
 def main():
     init_db()
