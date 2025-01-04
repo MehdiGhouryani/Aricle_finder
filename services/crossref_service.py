@@ -1,9 +1,12 @@
 import aiohttp
-from scholarly import scholarly
-
+from scholarly import scholarly\
+from services.scihub_service import fetch_scihub_article
+from services.arxiv_service import 
+from services.pubmed_service import search_articles_by_keywords
+from database import get_connection
 
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
-
+SEMANTIC_SCHOLAR_API_URL = 'https://api.semanticscholar.org/graph/v1/paper/search'
 
 
 
@@ -27,19 +30,63 @@ async def fetch_article_by_doi(doi: str) -> str:
 
 
 
+
 async def search_in_multiple_sources(keywords_or_doi: str) -> str:
-    try:
-        if keywords_or_doi.startswith('10.'):
+    
+    conn = get_connection()
+    cursor = conn.cursor()
 
-            result = await fetch_article_by_doi(keywords_or_doi)
+    if keywords_or_doi.startswith('10.'):
+        result = await fetch_article_by_doi(keywords_or_doi)
+        if result:
+            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+            conn.commit()
             return result
-        else:
 
-            result = await search_articles_by_keywords_google(keywords_or_doi)
+
+        result = fetch_scihub_article(keywords_or_doi)
+        if result:
+            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+            conn.commit()
             return result
-    except Exception as e:
-        print(e)
+    else:
+        keywords = ' AND '.join(keywords_or_doi.split(','))
+        result = await search_articles_by_keywords_scholar(keywords)
+        if result:
+            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+            conn.commit()
+            return result
 
+        result = await search_articles_by_keywords_google(keywords)
+        if result:
+            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+            conn.commit()
+            return result
+
+        result = await search_pubmed(keywords)
+        if result:
+            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+            conn.commit()
+            return result
+
+    cursor.execute('UPDATE stats SET searches_failed = searches_failed + 1')
+    conn.commit()
+    return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
+
+
+
+async def search_articles_by_keywords_scholar(keywords: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{SEMANTIC_SCHOLAR_API_URL}?query={keywords}&limit=3") as response:
+            if response.status == 200:
+                data = await response.json()
+                articles = ""
+                for paper in data['data']:
+                    title = paper['title']
+                    authors = ', '.join(paper['authors'])
+                    url = paper['url']
+                    articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
+                return articles if articles else "مقاله‌ای یافت نشد."
 
 
 
@@ -71,4 +118,23 @@ async def search_articles_by_keywords(keywords: str) -> str:
                     authors = ', '.join([author['given'] + ' ' + author['family'] for author in item.get('author', [])])
                     url = item.get('URL', 'لینکی موجود نیست')
                     articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
+                return articles if articles else "مقاله‌ای یافت نشد."
+            
+
+
+
+
+            
+async def search_pubmed(keywords: str) -> str:
+    url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.text()
+                articles = ""
+                for entry in data.split('\n\n'):
+                    if 'TI  -' in entry and 'AU  -' in entry:
+                        title = entry.split('TI  - ')[1].split('\n')[0]
+                        author = entry.split('AU  - ')[1].split('\n')[0]
+                        articles += f"📚 عنوان: {title.strip()}\n👨‍🔬 نویسندگان: {author.strip()}\n\n"
                 return articles if articles else "مقاله‌ای یافت نشد."

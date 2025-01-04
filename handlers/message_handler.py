@@ -47,8 +47,9 @@ async def handle_message(update: Update, context):
     elif state == 'awaiting_keywords':
         keywords = [keyword.strip() for keyword in text.replace(',', ' ').split() if keyword.strip()]
         result = await search_in_multiple_sources(' AND '.join(keywords))
-        update_user_state(user_id, None)
+
         await update.message.reply_text(result)
+        update_user_state(user_id, None)
 
     else:
         await update.message.reply_text('دستور نامعتبر!')
