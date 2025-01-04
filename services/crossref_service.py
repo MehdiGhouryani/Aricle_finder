@@ -50,11 +50,11 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
             return result
     else:
         keywords = ' AND '.join(keywords_or_doi.split(','))
-        result = await search_articles_by_keywords_scholar(keywords)
-        if result:
-            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-            conn.commit()
-            return result
+        # result = await search_articles_by_keywords_scholar(keywords)
+        # if result:
+        #     cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+        #     conn.commit()
+        #     return result
 
         result = await search_articles_by_keywords_google(keywords)
         if result:
@@ -124,19 +124,48 @@ async def search_articles_by_keywords_scholar(keywords: str) -> str:
         return f"خطایی رخ داد: {str(e)}"
 
 
-
 async def search_articles_by_keywords_google(keywords: str) -> str:
-    search_query = scholarly.search_pubs(keywords)
-    articles = ""
     try:
+        # جستجوی مقالات
+        search_query = scholarly.search_pubs(keywords)
+        
+        articles = ""
+        max_results = 5  # محدودیت تعداد نتایج
+        count = 0
+
         for result in search_query:
-            title = result['bib']['title']
-            authors = result['bib'].get('author', 'Unknown')
-            url = result.get('pub_url', 'No URL available')
-            articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
-            return articles if articles else "مقاله‌ای یافت نشد."
+            if count >= max_results:
+                break
+
+            # عنوان مقاله
+            title = result['bib'].get('title', 'عنوانی یافت نشد')
+
+            # نویسندگان
+            authors_list = result['bib'].get('author', [])
+            if authors_list:
+                authors = ', '.join(authors_list)
+            else:
+                authors = "نویسندگان ناشناس"
+
+            # لینک مقاله
+            url = result.get('pub_url')
+            if not url:
+                url = f"https://www.google.com/search?q={title.replace(' ', '+')}"
+
+            # افزودن به خروجی
+            count += 1
+            articles += (
+                f"🔹 مقاله شماره {count}:\n"
+                f"📚 عنوان: {title}\n"
+                f"👨‍🔬 نویسندگان: {authors}\n"
+                f"🔗 URL: {url}\n\n"
+            )
+
+        return articles if articles else "مقاله‌ای یافت نشد."
+
     except Exception as e:
-        print(f"IN keywords_google ---->  {e}")
+        print(f"خطا در تابع search_articles_by_keywords_google: {e}")
+        return "خطایی رخ داد. لطفاً دوباره تلاش کنید."
 
 
 
