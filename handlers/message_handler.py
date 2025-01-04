@@ -3,7 +3,7 @@ from telegram.ext import MessageHandler, filters
 from database import get_connection
 from services.crossref_service import fetch_article_by_doi,search_in_multiple_sources
 from services.scihub_service import fetch_scihub_article
-from stats_handler import update_user_state,get_user_state
+from handlers.stats_handler import update_user_state,get_user_state
 
 
 
