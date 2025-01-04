@@ -1,8 +1,7 @@
 import aiohttp
 from scholarly import scholarly
 from services.scihub_service import fetch_scihub_article
-# from services.arxiv_service import 
-from services.pubmed_service import search_articles_by_keywords
+
 from database import get_connection
 
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
@@ -93,13 +92,15 @@ async def search_articles_by_keywords_scholar(keywords: str) -> str:
 async def search_articles_by_keywords_google(keywords: str) -> str:
     search_query = scholarly.search_pubs(keywords)
     articles = ""
-    for result in search_query:
-        title = result['bib']['title']
-        authors = result['bib'].get('author', 'Unknown')
-        url = result.get('pub_url', 'No URL available')
-        articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
-        return articles if articles else "مقاله‌ای یافت نشد."
-
+    try:
+        for result in search_query:
+            title = result['bib']['title']
+            authors = result['bib'].get('author', 'Unknown')
+            url = result.get('pub_url', 'No URL available')
+            articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
+            return articles if articles else "مقاله‌ای یافت نشد."
+    except Exception as e:
+        print(f"IN keywords_google ---->  {e}")
 
 
 
