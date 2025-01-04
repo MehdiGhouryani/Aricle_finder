@@ -28,7 +28,7 @@ async def update_user_state(user_id, state):
 
 
 
-def get_user_state(user_id):
+async def get_user_state(user_id):
     conn = get_connection()
     cursor = conn.cursor()
  
