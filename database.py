@@ -1,6 +1,6 @@
 import sqlite3
 from config import send_error_to_admin
-DB_PATH = 'users.db'
+DB_PATH = 'database.db'
 
 def init_db():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
