@@ -109,7 +109,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
     except Exception as e:
 
         error_message = f"Error checking invite for {user_id}: {str(e)}"
-        send_error_to_admin(error_message)
+        await send_error_to_admin(error_message)
         return False
 
 

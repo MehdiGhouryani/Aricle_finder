@@ -75,4 +75,4 @@ def save_user_data(user_id, chat_id, username):
         conn.close()
     except Exception as e:
         error_message = f"Error saving user data: {str(e)}"
-        send_error_to_admin(error_message)
+        print(f"ERROR IN SAVE USER DATA    :{error_message}")
