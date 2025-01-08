@@ -23,7 +23,7 @@ def update_last_summary_date(user_id):
 async def send_invite_link(update:Update, user_id):
     try:
         invite_link = f"https://t.me/{BOT_USERNAME}?start={user_id}"
-        update.message.reply_text(f"برای دعوت از دوستان خود از لینک زیر استفاده کنید:\n{invite_link}")
+        await update.message.reply_text(f"برای دعوت از دوستان خود از لینک زیر استفاده کنید:\n{invite_link}")
 
     except Exception as e:
 
