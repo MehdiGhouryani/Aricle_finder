@@ -51,7 +51,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # ذخیره اطلاعات کاربر
     save_user_data(user_id, chat_id, username)
-    await send_invite_link(update,user_id)
+    # await send_invite_link(update,user_id)
     if inviter_user_id:
         try:
             await add_invite(int(inviter_user_id), user_id)
