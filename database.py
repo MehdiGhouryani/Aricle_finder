@@ -25,7 +25,7 @@ def init_db():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS invites (
         inviter_user_id INTEGER,
-        invitee_user_id INTEGER,
+        invitee_user_id INTEGER DEFAULT 0,
         used BOOLEAN DEFAULT FALSE,
         PRIMARY KEY (inviter_user_id, invitee_user_id)
     )
