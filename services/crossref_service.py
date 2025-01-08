@@ -1,7 +1,7 @@
 import aiohttp
 from scholarly import scholarly
 from services.scihub_service import fetch_scihub_article
-
+from config import send_error_to_admin
 from database import get_connection
 
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
@@ -54,19 +54,24 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
 async def fetch_article_by_doi(doi: str) -> str:
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{CROSSREF_API_URL}{doi}") as response:
-            if response.status == 200:
-                data = await response.json()
-                title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
-                authors = data['message'].get('author', [])
+            try:
+                if response.status == 200:
+                    data = await response.json()
+                    title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
+                    authors = data['message'].get('author', [])
 
-                author_names = [f"{author.get('given', 'ناشناخته')} {author.get('family', '')}".strip() for author in authors]
-                authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
+                    author_names = [f"{author.get('given', 'ناشناخته')} {author.get('family', '')}".strip() for author in authors]
+                    authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
 
-                pdf_link = data['message'].get('URL', 'لینکی موجود نیست')
-                return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}"
+                    pdf_link = data['message'].get('URL', 'لینکی موجود نیست')
+                    return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}"
 
-            return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
-        
+                return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
+            except Exception as e:
+                error_message = f"Error fetch article by doi  : {str(e)}"
+                await send_error_to_admin(error_message)
+
+
 
 
 
