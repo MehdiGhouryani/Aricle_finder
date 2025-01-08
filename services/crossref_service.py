@@ -17,7 +17,7 @@ import os
 async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,doi):
 
     user_id = update.message.chat_id
-    doi = doi.strip()
+    # doi = doi.strip()
 
     try:
         if not doi.startswith("10."):
@@ -79,21 +79,22 @@ UNPAYWALL_API_URL = "https://api.unpaywall.org/v2/"
 EMAIL_FOR_UNPAYWALL = "mohammadmahdi670@gmail.com"  # ایمیل ثبت‌شده در Unpaywall
 
 async def fetch_pdf_link_by_doi(doi: str) -> dict:
-    """
-    جستجوی DOI در Unpaywall برای دریافت لینک PDF مقاله
-    """
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{UNPAYWALL_API_URL}{doi}?email={EMAIL_FOR_UNPAYWALL}") as response:
             if response.status == 200:
                 data = await response.json()
-                pdf_link = data.get('best_oa_location', {}).get('url_for_pdf')
-                publisher_page = data.get('best_oa_location', {}).get('url')
+                
+                best_oa_location = data.get('best_oa_location', {})
+                pdf_link = best_oa_location.get('url_for_pdf')
+                publisher_page = best_oa_location.get('url')
+                
                 return {
                     "pdf_link": pdf_link or None,
                     "publisher_page": publisher_page or None,
                     "message": "Open Access" if pdf_link else "Not Open Access"
                 }
-            return {"message": "DOI not found"}
+            else:
+                return {"message": f"Error: {response.status} - DOI not found"}
 
 
 

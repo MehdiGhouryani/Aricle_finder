@@ -11,9 +11,6 @@ import os
 
 
 async def download_pdf(pdf_url: str, user_id: int) -> str:
-    """
-    دانلود PDF از URL و ذخیره در مسیر موقت
-    """
     file_name = f"article_{user_id}.pdf"
     file_path = os.path.join("/tmp", file_name)
 

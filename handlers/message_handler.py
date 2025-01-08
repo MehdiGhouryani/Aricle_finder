@@ -84,6 +84,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
                 doi = text
 
             result = await handle_doi_request(update,context,doi)
+            print(f"result   =   {result}")
             await update.message.reply_text(result)
             reset_user_data(context)
 
