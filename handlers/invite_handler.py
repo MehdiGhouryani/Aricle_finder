@@ -95,5 +95,5 @@ async def summarize_article_handler(update: Update, context: ContextTypes.DEFAUL
 
     except Exception as e:
  
-        error_message = f"Error sending invite link to {user_id}: {str(e)}"
+        error_message = f"summarize_article_handler{user_id}: {str(e)}"
         await send_error_to_admin(error_message)

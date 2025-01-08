@@ -15,7 +15,6 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s', level=loggi
 def main():
     init_db()
 
-    # ساخت اپلیکیشن تلگرام
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(start_handler)

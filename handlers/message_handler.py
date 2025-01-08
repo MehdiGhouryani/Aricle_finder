@@ -8,7 +8,7 @@ from handlers.auto_article_handler import manage_auto_article_sending
 from config import ADMIN_CHAT_ID,reset_user_data
 from handlers.invite_handler import summarize_article_handler,send_error_to_admin
 from handlers.AI import summarizing
-import asyncio
+
 
 
 
@@ -108,7 +108,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
         conn.close()
     except Exception as e:
 
-        error_message = f"Error checking invite for {user_id}: {str(e)}"
+        error_message = f" handle_message {user_id}: {str(e)}"
         await send_error_to_admin(error_message)
         return False
 
