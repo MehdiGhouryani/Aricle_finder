@@ -7,7 +7,7 @@ import logging
 # from scheduler import start_scheduler
 from database import init_db
 import os
-from detenv import load_dotenv
+from dotenv import load_dotenv
 
 load_dotenv()
 
