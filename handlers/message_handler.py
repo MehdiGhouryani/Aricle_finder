@@ -39,6 +39,44 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
             context.user_data["awaiting_doi"] = True
             await update.message.reply_text('لطفاً DOI مورد نظر خود را وارد کنید:')
 
+
+
+
+
+        elif text == '🔍 جستجو':
+            context.user_data["awaiting_keywords"] = True
+            # cursor.execute('UPDATE users SET state = ? WHERE id = ?', ('awaiting_keywords', user_id))
+            await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
+    
+
+
+        elif text == '📞 تماس با ما':
+            await contact_us_handler(update,context)
+
+
+
+        elif text == '📬 ارسال خودکار مقالات':
+            await manage_auto_article_sending(update,context)
+            reset_user_data(context)
+
+
+
+
+        elif text == '✂️ خلاصه‌سازی با هوش مصنوعی':
+            reset_user_data(context)
+            await summarize_article_handler(update,context)
+
+
+
+
+
+        elif context.user_data.get("awaiting_ai"):
+            await summarizing(update,context)
+            reset_user_data(context)
+
+
+
+
         elif context.user_data.get("awaiting_doi"):
             if "https://doi.org/" in text:
                 doi = text.split("https://doi.org/")[-1].strip()
@@ -51,14 +89,11 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
 
+        elif context.user_data.get("awaiting_message"):
+            await receive_user_message_handler(update,context)
+            reset_user_data(context)
 
 
-
-
-        elif text == '🔍 جستجو':
-            context.user_data["awaiting_keywords"] = True
-            # cursor.execute('UPDATE users SET state = ? WHERE id = ?', ('awaiting_keywords', user_id))
-            await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
 
         elif context.user_data.get("awaiting_keywords"):
             keywords = [keyword.strip() for keyword in text.replace(',', ' ').split() if keyword.strip()]
@@ -66,42 +101,6 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
             await update.message.reply_text(result)
             reset_user_data(context)
-    
-
-
-
-
-
-        elif text == '📞 تماس با ما':
-            await contact_us_handler(update,context)
-
-        elif context.user_data.get("awaiting_message"):
-            await receive_user_message_handler(update,context)
-            reset_user_data(context)
-
-
-
-
-
-
-
-        elif text == '📬 ارسال خودکار مقالات':
-            await manage_auto_article_sending(update,context)
-            reset_user_data(context)
-
-
-
-
-
-        elif text == '✂️ خلاصه‌سازی با هوش مصنوعی':
-            reset_user_data(context)
-            await summarize_article_handler(update,context)
-
-        elif context.user_data.get("awaiting_ai"):
-            await summarizing(update,context)
-            reset_user_data(context)
-
-
 
 
 
