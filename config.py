@@ -3,6 +3,7 @@ import os
 
 
 TOKEN = os.getenv('TOKEN')
+print(TOKEN)
 bot = Bot(TOKEN)
 
 ADMIN_CHAT_ID=['1717599240']
