@@ -43,7 +43,7 @@ def get_connection():
     return sqlite3.connect(DB_PATH, check_same_thread=False)
 
 
-def increment_invite_count(inviter_user_id):
+async def increment_invite_count(inviter_user_id):
     try:
         conn = sqlite3.connect('users.db')
         c = conn.cursor()
@@ -58,7 +58,7 @@ def increment_invite_count(inviter_user_id):
         conn.close()
     except Exception as e:
         error_message = f"Error incrementing invite_count for inviter {inviter_user_id}: {str(e)}"
-        send_error_to_admin(error_message)
+        await send_error_to_admin(error_message)
 
 
 def save_user_data(user_id, chat_id, username):

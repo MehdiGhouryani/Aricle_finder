@@ -1,7 +1,7 @@
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import CommandHandler,ContextTypes
 from database import get_connection,save_user_data,increment_invite_count
-from handlers.invite_handler import (send_error_to_admin,add_invite)
+from handlers.invite_handler import (send_error_to_admin,add_invite,send_invite_link)
 from telegram.constants import ParseMode
 
 # async def start(update: Update, context):
@@ -51,11 +51,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # ذخیره اطلاعات کاربر
     save_user_data(user_id, chat_id, username)
-
+    await send_invite_link(update,user_id)
     if inviter_user_id:
         try:
-            add_invite(int(inviter_user_id), user_id)
-            increment_invite_count(int(inviter_user_id))  
+            await add_invite(int(inviter_user_id), user_id)
+            await increment_invite_count(int(inviter_user_id))  
             await update.message.reply_text(f"شما با موفقیت از لینک دعوت وارد شدید. حالا می‌توانید از قابلیت‌ها استفاده کنید!")
 
             # ارسال پیام به کاربر دعوت‌دهنده
@@ -68,7 +68,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         except Exception as e:
             error_message = f"Error processing start for {user_id} with inviter {inviter_user_id}: {str(e)}"
-            send_error_to_admin(error_message)
+            await send_error_to_admin(error_message)
     else:
         await update.message.reply_text(start_text,parse_mode=ParseMode.MARKDOWN)
 
