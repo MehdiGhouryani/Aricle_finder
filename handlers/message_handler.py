@@ -34,7 +34,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        if text == 'دریافت مقاله با DOI':
+        if text == '📄 DOI':
             reset_user_data(context)
             context.user_data["awaiting_doi"] = True
             await update.message.reply_text('لطفاً DOI مورد نظر خود را وارد کنید:')
@@ -55,7 +55,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
 
-        elif text == 'جستجوی مقاله با کلمات کلیدی':
+        elif text == '🔍 جستجو':
             context.user_data["awaiting_keywords"] = True
             # cursor.execute('UPDATE users SET state = ? WHERE id = ?', ('awaiting_keywords', user_id))
             await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
@@ -72,7 +72,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
 
-        elif text == 'تماس با ما':
+        elif text == '📞 تماس با ما':
             await contact_us_handler(update,context)
 
         elif context.user_data.get("awaiting_message"):
@@ -85,7 +85,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
 
-        elif text == 'ارسال خودکار مقالات جدید':
+        elif text == '📬 ارسال خودکار مقالات':
             await manage_auto_article_sending(update,context)
             reset_user_data(context)
 
@@ -93,7 +93,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
 
-        elif text == 'خلاصه‌سازی مقاله با هوش مصنوعی':
+        elif text == '✂️ خلاصه‌سازی با هوش مصنوعی':
             reset_user_data(context)
             await summarize_article_handler(update,context)
 

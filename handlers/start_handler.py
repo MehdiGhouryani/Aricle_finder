@@ -2,7 +2,7 @@ from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import CommandHandler,ContextTypes
 from database import get_connection,save_user_data,increment_invite_count
 from handlers.invite_handler import (send_error_to_admin,add_invite)
-
+from telegram.constants import ParseMode
 
 async def start(update: Update, context):
     user = update.message.from_user
@@ -56,11 +56,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text('سلام به ربات مقاله یاب خوش آمدید!')
 
+    start_text ='''
+**سلام! خوش اومدی به ربات مقاله‌یاب!** 😊
 
+**🔹 دریافت با DOI:** اگه شناسه DOI مقاله داری، اینجا وارد کن و مقاله رو بگیر.
+
+🔹 جستجو:** فقط کلمات کلیدی مقاله رو داری؟ یا دنبال مقاله‌ی تو حوزه خاصی هستی؟**
+بزن و مقاله‌های مرتبط رو پیدا کن.
+
+🔹 مقالات جدید:** مقالات جدید و مرتبط خودکار برات ارسال می‌شه.**
+
+🔹 خلاصه‌سازی: **لینک مقاله رو بده، هوش‌مصنوعیه ربات برات خلاصه‌ش می‌کنه.**
+
+🔹 تماس:** سوال پیشنهاد یا درخواستی داری؟  با این دکمه با ما در تماس باش.**
+
+هر سوالی بود، ما اینجاییم!
+'''
     keyboards = [
-        [KeyboardButton('دریافت مقاله با DOI'), KeyboardButton('جستجوی مقاله با کلمات کلیدی')],
-        [KeyboardButton('ارسال خودکار مقالات جدید'), KeyboardButton('خلاصه‌سازی مقاله با هوش مصنوعی')],
-        [KeyboardButton('تماس با ما')]
-    ]
+        [KeyboardButton('📄 DOI'), KeyboardButton('🔍 جستجو')],
+        [KeyboardButton('📬 ارسال خودکار مقالات'), KeyboardButton('✂️ خلاصه‌سازی با هوش مصنوعی')],
+        [KeyboardButton('📞 تماس با ما')]]
+
     reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
-    await update.message.reply_text('لطفاً از یکی از گزینه‌ها استفاده کنید:', reply_markup=reply_markup)
+    await update.message.reply_text(start_text, reply_markup=reply_markup,parse_mode=ParseMode.MARKDOWN)
