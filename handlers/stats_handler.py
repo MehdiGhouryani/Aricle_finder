@@ -19,19 +19,19 @@ stats_handler = CommandHandler('stats', stats)
 
 
 
-async def update_user_state(user_id, state):
-    conn = get_connection()
-    cursor = conn.cursor()
+# async def update_user_state(user_id, state):
+#     conn = get_connection()
+#     cursor = conn.cursor()
  
-    cursor.execute('UPDATE users SET state = ? WHERE id = ?', (state, user_id))
-    conn.commit()
+#     cursor.execute('UPDATE users SET state = ? WHERE id = ?', (state, user_id))
+#     conn.commit()
 
 
 
-async def get_user_state(user_id):
-    conn = get_connection()
-    cursor = conn.cursor()
+# async def get_user_state(user_id):
+#     conn = get_connection()
+#     cursor = conn.cursor()
  
-    cursor.execute('SELECT state FROM users WHERE id = ?', (user_id,))
-    result = cursor.fetchone()
-    return result[0] if result else None
+#     cursor.execute('SELECT state FROM users WHERE id = ?', (user_id,))
+#     result = cursor.fetchone()
+#     return result[0] if result else None
