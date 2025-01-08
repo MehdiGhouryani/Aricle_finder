@@ -13,6 +13,6 @@ def reset_user_data(context):
 async def send_error_to_admin(error_message):
     admin_user_id = 1717599240
     try:
-       await Bot.send_message(admin_user_id, error_message)
+       await Bot.send_message(chat_id=admin_user_id, text=error_message)
     except Exception as e:
         print(f"Failed to send error message to admin: {str(e)}")
