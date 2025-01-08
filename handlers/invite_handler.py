@@ -91,6 +91,10 @@ async def summarize_article_handler(update: Update, context: ContextTypes.DEFAUL
             await update.message.reply_text("لطفاً مقاله خود را ارسال کنید تا آن را خلاصه کنیم.")
         else:
             await update.message.reply_text("شما قبلاً از این قابلیت استفاده کرده‌اید. لطفاً یک نفر را دعوت کنید تا دوباره از آن استفاده کنید.")
+            send_invite_link(update,user_id)
+
+
+
 
     except Exception as e:
  
