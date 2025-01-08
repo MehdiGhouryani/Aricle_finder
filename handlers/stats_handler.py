@@ -1,21 +1,21 @@
-from telegram import Update
-from telegram.ext import CommandHandler
-from database import get_connection
+# from telegram import Update
+# from telegram.ext import CommandHandler
+# from database import get_connection
 
-async def stats(update: Update, context):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM stats')
-    stats_data = cursor.fetchone()
-    conn.close()
+# async def stats(update: Update, context):
+#     conn = get_connection()
+#     cursor = conn.cursor()
+#     cursor.execute('SELECT * FROM stats')
+#     stats_data = cursor.fetchone()
+#     conn.close()
 
-    if stats_data:
-        successful, failed = stats_data
-        await update.message.reply_text(f"📊 آمار جستجو:\n✅ موفق: {successful}\n❌ ناموفق: {failed}")
-    else:
-        await update.message.reply_text('آماری ثبت نشده است.')
+#     if stats_data:
+#         successful, failed = stats_data
+#         await update.message.reply_text(f"📊 آمار جستجو:\n✅ موفق: {successful}\n❌ ناموفق: {failed}")
+#     else:
+#         await update.message.reply_text('آماری ثبت نشده است.')
 
-stats_handler = CommandHandler('stats', stats)
+# stats_handler = CommandHandler('stats', stats)
 
 
 

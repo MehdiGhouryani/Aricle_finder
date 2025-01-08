@@ -3,7 +3,7 @@ from telegram.ext import MessageHandler, filters,ContextTypes
 from database import get_connection
 from services.crossref_service import search_in_multiple_sources,handle_doi_request
 # from services.scihub_service import fetch_scihub_article
-from handlers.stats_handler import update_user_state,get_user_state
+# from handlers.stats_handler import update_user_state,get_user_state
 from handlers.auto_article_handler import manage_auto_article_sending
 from config import ADMIN_CHAT_ID,reset_user_data
 from handlers.invite_handler import summarize_article_handler,send_error_to_admin
@@ -28,7 +28,7 @@ import asyncio
 async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     text = update.message.text
-    state =await get_user_state(user_id)
+    # state =await get_user_state(user_id)
 
 
     conn = get_connection()
