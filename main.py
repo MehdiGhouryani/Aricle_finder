@@ -7,9 +7,13 @@ import logging
 # from scheduler import start_scheduler
 from database import init_db
 import os
+from detenv import load_dotenv
+
+load_dotenv()
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s', level=logging.INFO)
-# TOKEN = os.getenv('TOKEN')
-TOKEN ="7821187888:AAFCIAOfgZ6b9Jf7fOPI5Us0suzavuskXkg"
+TOKEN = os.getenv('TOKEN')
+
 
 def main():
     init_db()
