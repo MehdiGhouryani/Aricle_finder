@@ -22,7 +22,7 @@ import re
 
 
 async def generate_summary(update:Update,context:ContextTypes.DEFAULT_TYPE,article):
-
+    print(f"AI IS RUNNING > > > ")
     reset_user_data(context)
 
     try:
