@@ -50,8 +50,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await context.bot.send_message(chat_id=inviter_id, text="🎉 شما 50 امتیاز بابت دعوت کاربر جدید دریافت کردید!")
 
 
-    else:
-        await update.message.reply_text(start_text,parse_mode=ParseMode.MARKDOWN)
+    # else:
+    #     await update.message.reply_text(start_text,parse_mode=ParseMode.MARKDOWN)
 
 
     keyboards = [
@@ -60,7 +60,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [KeyboardButton('📞 تماس با ما')]]
 
     reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
-    await update.message.reply_text(text=start_text, reply_markup=reply_markup)
+    await update.message.reply_text(text=start_text, reply_markup=reply_markup,parse_mode=ParseMode.MARKDOWN)
 
 
 start_handler = CommandHandler('start', start)
