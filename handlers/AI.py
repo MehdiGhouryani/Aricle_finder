@@ -25,7 +25,7 @@ async def generate_summary(update:Update,context:ContextTypes.DEFAULT_TYPE,artic
 
     reset_user_data(context)
     print(f"AI IS RUNNING > > > ")
-    asyncio.sleep(1)
+    await asyncio.sleep(1)
     try:
         response = model.generate_content(f"""
 مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست واسم.
