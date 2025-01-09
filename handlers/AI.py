@@ -57,7 +57,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📄 در حال  خلاصه سازی . . .")
         summary = generate_summary(article_info)
 
-        await update.message.reply_text(summary,parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(summary,parse_mode=ParseMode.MARKDOWN_V2)
 
     except ValueError as ve:
         print(f"User {user_id} encountered error: {str(ve)}")
