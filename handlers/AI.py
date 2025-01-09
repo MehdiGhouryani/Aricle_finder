@@ -5,7 +5,6 @@ from telegram.constants import ParseMode
 import os
 from config import reset_user_data
 from dotenv import load_dotenv
-from scholarly import scholarly
 from services.crossref_service import fetch_article_by_doi
 load_dotenv()
 import re
@@ -57,7 +56,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📄 در حال  خلاصه سازی . . .")
         summary = generate_summary(article_info)
 
-        await update.message.reply_text(summary,parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(str(summary), parse_mode=ParseMode.MARKDOWN)
 
     except ValueError as ve:
         print(f"User {user_id} encountered error: {str(ve)}")
@@ -75,9 +74,9 @@ def generate_summary(article_info):
     try:
         response = model.generate_content(f"""
 
-مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست واسم.
+مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست.
 خلاصه‌ای که مینویسی به زبان عامیانه و روان فارسی باشه.
-
+و با جزيیات و حرفه ای باشه
 {article_info}
         """)
         return str(response.text)
