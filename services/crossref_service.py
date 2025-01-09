@@ -73,6 +73,22 @@ async def fetch_article_by_doi(doi: str) -> str:
                 await send_error_to_admin(error_message)
 
 
+async def fetch_article_by_doi_for_ai(doi: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{CROSSREF_API_URL}{doi}") as response:
+            try:
+                if response.status == 200:
+                    data = await response.json()
+                    title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
+                    abstract = data['message'].get('abstract', 'چکیده‌ای موجود نیست')
+
+                    return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان:\n\n📝 چکیده: {abstract}"
+
+                return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
+            except Exception as e:
+                error_message = f"Error fetch article by doi  : {str(e)}"
+                await send_error_to_admin(error_message)
+
 
 UNPAYWALL_API_URL = "https://api.unpaywall.org/v2/"
 EMAIL_FOR_UNPAYWALL = "mohammadmahdi670@gmail.com"  # ایمیل ثبت‌شده در Unpaywall

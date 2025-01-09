@@ -5,7 +5,7 @@ from telegram.constants import ParseMode
 import os
 from config import reset_user_data
 from dotenv import load_dotenv
-from services.crossref_service import fetch_article_by_doi
+from services.crossref_service import fetch_article_by_doi_for_ai
 load_dotenv()
 import re
 import asyncio
@@ -46,7 +46,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await update.message.reply_text("⏳ در حال دریافت اطلاعات مقاله، لطفاً صبر کنید...")
 
-        article_info = await fetch_article_by_doi(user_message)
+        article_info = await fetch_article_by_doi_for_ai(user_message)
 
         if article_info == "متاسفم، مقاله‌ای با این DOI پیدا نشد.":
             await update.message.reply_text("❌ مقاله‌ای با این DOI یافت نشد. لطفاً دوباره تلاش کنید.")
