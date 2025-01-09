@@ -12,7 +12,7 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS points (
             user_id INT REFERENCES users(user_id) PRIMARY KEY,
-            score INTEGER NOT NULL DEFAULT 0
+            score INTEGER NOT NULL DEFAULT 80
 )""")
      
     cursor.execute('''

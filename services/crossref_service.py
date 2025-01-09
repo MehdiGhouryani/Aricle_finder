@@ -41,7 +41,7 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
         else:
             await update.message.reply_text("مقاله برای دانلود در دسترس نیست !")
             result = await fetch_article_by_doi(doi)
-            await update.message.reply_text(result)
+            await update.message.reply_text(f"{result}\n\n\n میتونی DOI رو بفرستی بخش خلاصه سازی و هوش مصنوعی واست ی خلاصه ازش بده ")
 
     except Exception as e:
         print(f"Error in handling DOI request: {e}")

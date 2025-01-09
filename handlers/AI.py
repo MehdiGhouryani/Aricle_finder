@@ -72,11 +72,12 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def generate_summary(article_info):
     print(f"AI IS RUNNING > > > ")
     try:
+        await asyncio.sleep(15)
         response = model.generate_content(f"""
 
 مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست.
 خلاصه‌ای که مینویسی به زبان عامیانه و روان فارسی باشه.
-و با جزيیات و حرفه ای باشه
+و با جزيیات و طولانی و حرفه ای باشه
    و بدون  بولد کردن یا هر چیز دیگ ای باشه و ساده فقط بنویس
 {article_info}
         """)
