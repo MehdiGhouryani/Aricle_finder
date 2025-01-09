@@ -13,7 +13,7 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 async def summarizing(update:Update,context:ContextTypes.DEFAULT_TYPE):
     article = update.message.text
 
-    await reset_user_data(context)
+    reset_user_data(context)
 
     try:
             response = model.generate_content(f"""
