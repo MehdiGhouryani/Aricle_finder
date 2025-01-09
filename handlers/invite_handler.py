@@ -2,10 +2,9 @@ from telegram import Bot,Update
 from telegram.ext import ContextTypes
 from config import BOT_USERNAME,send_error_to_admin
 import sqlite3
-from datetime import date
 
 
-INITIAL_SCORE = 50
+INITIAL_SCORE = 5000
 
 
 
@@ -61,7 +60,7 @@ def add_points(user_id, points):
 
 
 async def send_invite_link(update:Update, user_id):
-    conn = sqlite3.connect('Database.db')
+    conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute("SELECT score FROM points WHERE user_id = ?", (user_id,))
     score = cursor.fetchone()
@@ -84,7 +83,7 @@ async def send_invite_link(update:Update, user_id):
 # تابعی برای نمایش امتیاز کاربر
 async def show_score(update: Update):
     user_id = update.effective_user.id
-    conn = sqlite3.connect('Database.db')
+    conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute("SELECT score FROM points WHERE user_id = ?", (user_id,))
     score = cursor.fetchone()
