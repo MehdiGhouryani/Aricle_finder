@@ -180,16 +180,14 @@ async def search_pubmed(keywords: str, max_results: int = 5) -> str:
         
 
 
-
 async def fetch_articles(ids: list) -> str:
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {
         "db": "pubmed",
-        "id": ",".join(ids),       # شناسه‌های مقالات
-        "retmode": "xml",          # فرمت XML
-        "rettype": "abstract",     # دریافت چکیده مقالات
+        "id": ",".join(ids),  # شناسه‌های مقالات
+        "retmode": "xml",     # فرمت XML
+        "rettype": "abstract" # دریافت چکیده مقالات
     }
-    print(f"fetch_articles :   {params}")
     async with aiohttp.ClientSession() as session:
         try:
             async with session.get(url, params=params) as response:
@@ -199,28 +197,39 @@ async def fetch_articles(ids: list) -> str:
                     articles = parsed_data['PubmedArticleSet']['PubmedArticle']
                     result = ""
 
-                    # پردازش مقالات و استخراج عنوان و چکیده
-                    for article in articles:
+                    # پردازش مقالات و استخراج اطلاعات مورد نیاز
+                    for idx, article in enumerate(articles, start=1):
                         title = article['MedlineCitation']['Article']['ArticleTitle']
-                        abstract_data = article['MedlineCitation']['Article'].get('Abstract', {}).get('AbstractText', 'چکیده‌ای موجود نیست.')
-                        
-                        # مدیریت ساختار AbstractText
-                        if isinstance(abstract_data, list):
-                            abstract = " ".join(
-                                part['#text'] if isinstance(part, dict) and '#text' in part else str(part)
-                                for part in abstract_data
-                            )
-                        else:
-                            abstract = str(abstract_data)
+                        authors_list = article['MedlineCitation']['Article'].get('AuthorList', {}).get('Author', [])
+                        authors = []
 
-                        result += f"عنوان: {title}\nچکیده: {abstract}\n\n"
+                        # استخراج نویسندگان
+                        if isinstance(authors_list, list):
+                            for author in authors_list:
+                                if 'LastName' in author and 'ForeName' in author:
+                                    authors.append(f"{author['ForeName']} {author['LastName']}")
+                        elif isinstance(authors_list, dict):
+                            if 'LastName' in authors_list and 'ForeName' in authors_list:
+                                authors.append(f"{authors_list['ForeName']} {authors_list['LastName']}")
+
+                        authors_str = ", ".join(authors) if authors else "نویسندگان موجود نیستند."
+
+                        # لینک مقاله
+                        article_id = article['MedlineCitation']['PMID']
+                        article_url = f"https://pubmed.ncbi.nlm.nih.gov/{article_id}/"
+
+                        # ساخت نتیجه
+                        result += (
+                            f"🔹 مقاله شماره {idx}:\n"
+                            f"📚 عنوان: {title}\n"
+                            f"👨‍🔬 نویسندگان: {authors_str}\n"
+                            f"🔗 URL: {article_url}\n\n"
+                        )
                     return result
                 else:
                     return "خطا در دریافت اطلاعات مقالات."
         except Exception as e:
             return f"خطایی رخ داد: {str(e)}"
-
-
 
 # async def search_pubmed(keywords: str) -> str:
 #     url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
