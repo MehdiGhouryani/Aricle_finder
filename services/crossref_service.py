@@ -18,7 +18,6 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     user_id = update.message.chat_id
     # doi = doi.strip()
-
     try:
         if not doi.startswith("10."):
             await update.message.reply_text("لطفاً یک DOI معتبر وارد کنید.")
@@ -50,6 +49,7 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 
 
+
 async def fetch_article_by_doi(doi: str) -> str:
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{CROSSREF_API_URL}{doi}") as response:
@@ -63,14 +63,14 @@ async def fetch_article_by_doi(doi: str) -> str:
                     authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
 
                     pdf_link = data['message'].get('URL', 'لینکی موجود نیست')
-                    return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}"
+                    abstract = data['message'].get('abstract', 'چکیده‌ای موجود نیست')
+
+                    return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}\n\n📝 چکیده: {abstract}"
 
                 return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
             except Exception as e:
                 error_message = f"Error fetch article by doi  : {str(e)}"
                 await send_error_to_admin(error_message)
-
-
 
 
 
@@ -123,7 +123,6 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
 
 async def search_articles_by_keywords_google(keywords: str) -> str:
     try:
-        # جستجوی مقالات
         search_query = scholarly.search_pubs(keywords)
         
         articles = ""
