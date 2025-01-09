@@ -15,50 +15,46 @@ gen_token =os.getenv("genai")
 
 genai.configure(api_key=gen_token)
 model = genai.GenerativeModel("gemini-1.5-flash")
-
 import re
+
+
+
 
 def extract_doi(user_input: str):
 
     if re.match(r'^[0-9]{4}/[0-9]{9}', user_input):
         return user_input
-    
+
     if 'doi.org' in user_input:
         match = re.search(r'doi\.org/([0-9]+(?:\.[0-9]+)+)', user_input)
         if match:
             return match.group(1)
-    
-    # بررسی لینک‌های wiley.com
+
     elif 'wiley.com' in user_input:
         match = re.search(r'doi/abs/([0-9]+(?:\.[0-9]+)+)', user_input)
         if match:
             return match.group(1)
-    
-    # بررسی لینک‌های مشابه سایت‌های علمی
+
     elif 'springer.com' in user_input:
         match = re.search(r'doi/([0-9]+(?:\.[0-9]+)+)', user_input)
         if match:
             return match.group(1)
 
-    # بررسی لینک‌های مشابه Elsevier
     elif 'elsevier.com' in user_input:
         match = re.search(r'doi/([0-9]+(?:\.[0-9]+)+)', user_input)
         if match:
             return match.group(1)
-    
-    # بررسی لینک‌های مشابه Scopus
+
     elif 'scopus.com' in user_input:
         match = re.search(r'doi/([0-9]+(?:\.[0-9]+)+)', user_input)
         if match:
             return match.group(1)
 
-    # لینک‌های DOI از سایت‌های دیگر
     elif re.search(r'https?://(?:www\.)?([a-zA-Z0-9-]+)\.com/doi/([0-9]+(?:\.[0-9]+)+)', user_input):
         match = re.search(r'https?://(?:www\.)?([a-zA-Z0-9-]+)\.com/doi/([0-9]+(?:\.[0-9]+)+)', user_input)
         if match:
             return match.group(2)
 
-    # اگر DOI استخراج نشد
     return None
 
 async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
