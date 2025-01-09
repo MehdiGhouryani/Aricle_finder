@@ -178,6 +178,8 @@ async def search_pubmed(keywords: str, max_results: int = 5) -> str:
         except Exception as e:
             return f"خطایی رخ داد: {str(e)}"
         
+
+
 async def fetch_articles(ids: list) -> str:
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {
@@ -186,6 +188,8 @@ async def fetch_articles(ids: list) -> str:
         "retmode": "xml",     # فرمت XML
         "rettype": "abstract" # دریافت چکیده مقالات
     }
+    print(f"fetch_articles: {params}")
+    
     async with aiohttp.ClientSession() as session:
         try:
             async with session.get(url, params=params) as response:
@@ -195,46 +199,42 @@ async def fetch_articles(ids: list) -> str:
                     articles = parsed_data['PubmedArticleSet']['PubmedArticle']
                     result = ""
 
-                    # پردازش مقالات و استخراج اطلاعات مورد نیاز
+                    # پردازش مقالات
                     for idx, article in enumerate(articles, start=1):
+                        # استخراج عنوان
                         title = article['MedlineCitation']['Article']['ArticleTitle']
                         
-                        # استخراج PMID به‌درستی
-                        pmid = article['MedlineCitation']['PMID']['#text']
-                        article_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
-
-                        authors_list = article['MedlineCitation']['Article'].get('AuthorList', {}).get('Author', [])
-                        authors = []
-
                         # استخراج نویسندگان
-                        if isinstance(authors_list, list):
-                            for author in authors_list:
-                                if 'LastName' in author and 'ForeName' in author:
-                                    authors.append(f"{author['ForeName']} {author['LastName']}")
-                        elif isinstance(authors_list, dict):
-                            if 'LastName' in authors_list and 'ForeName' in authors_list:
-                                authors.append(f"{authors_list['ForeName']} {authors_list['LastName']}")
-
-                        authors_str = ", ".join(authors) if authors else "نویسندگان موجود نیستند."
-
-                        # ساخت نتیجه
+                        authors_list = article['MedlineCitation']['Article'].get('AuthorList', {}).get('Author', [])
+                        if isinstance(authors_list, dict):  # یک نویسنده
+                            authors = f"{authors_list.get('LastName', '')} {authors_list.get('Initials', '')}"
+                        else:  # چند نویسنده
+                            authors = ", ".join(
+                                f"{author.get('LastName', '')} {author.get('Initials', '')}" 
+                                for author in authors_list if 'LastName' in author
+                            )
+                        
+                        # استخراج PMID
+                        pmid = article['MedlineCitation']['PMID']['#text']
+                        
+                        # ساخت فرمت خروجی
                         result += (
                             f"🔹 مقاله شماره {idx}:\n"
                             f"📚 عنوان: {title}\n"
-                            f"👨‍🔬 نویسندگان: {authors_str}\n"
-                            f"🔗 URL: {article_url}\n\n"
+                            f"👨‍🔬 نویسندگان: {authors}\n"
+                            f"🔗 URL: https://pubmed.ncbi.nlm.nih.gov/{pmid}/\n\n"
                         )
-                    return result
+                    return result.strip()
                 else:
                     return "خطا در دریافت اطلاعات مقالات."
         except Exception as e:
             return f"خطایی رخ داد: {str(e)}"
-        
 
 
 
 
-        
+
+
 # async def search_pubmed(keywords: str) -> str:
 #     url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
 #     async with aiohttp.ClientSession() as session:
