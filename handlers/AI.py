@@ -16,24 +16,24 @@ gen_token =os.getenv("genai")
 genai.configure(api_key=gen_token)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
-
-def extract_doi_from_url(text):
-
-    doi_pattern = r'(10.d{4,9}/[-._;()/:A-Z0-9]+)'
+def extract_doi(user_input: str):
     
-    match = re.search(doi_pattern, text, re.IGNORECASE)
-    
-    if match:
-        return match.group(0) 
-    else:
-        return None
 
+    if re.match(r'^[0-9]{4}/[0-9]{9}', user_input): 
+        return user_input
+
+    elif 'doi.org' in user_input:
+        match = re.search(r'doi\.org/([0-9]+(?:\.[0-9]+)+)', user_input)
+        if match:
+            return match.group(1)
+    
+    return None
 
 
 async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input = update.message.text.strip()
     
-    doi = extract_doi_from_url(user_input)
+    doi = extract_doi(user_input)
     print(doi)
    
     try:
