@@ -12,13 +12,14 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS points (
             user_id INT REFERENCES users(user_id) PRIMARY KEY,
-            score INTEGER NOT NULL
+            score INTEGER NOT NULL DEFAULT 0
 )""")
      
-    cursor.execute('''CREATE TABLE IF NOT EXISTS referrals (
-                   inviter_id INTEGER,
-                   invited_id INTEGER,
-                   UNIQUE(inviter_id,invited_id)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS referrals (
+           inviter_id INTEGER,
+           invited_id INTEGER,
+           UNIQUE(inviter_id,invited_id)
 )''')
     
     cursor.execute('''
@@ -32,10 +33,10 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )''')
 
-
-
     conn.commit()
     conn.close()
+
+
 
 def get_connection():
     return sqlite3.connect(DB_PATH, check_same_thread=False)
