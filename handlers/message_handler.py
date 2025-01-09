@@ -118,7 +118,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
         elif context.user_data.get("awaiting_keywords_pubmed"):
-            await update.message.reply_text("در حال جستجو در Pubmd . . . ")
+            await update.message.reply_text("در حال جستجوی مقالات در پایگاه PubMed . . .")
             keywords = [keyword.strip() for keyword in text.replace(',', ' ').split() if keyword.strip()]
             result = await search_in_pubmed_sources(' AND '.join(keywords))
 
@@ -127,7 +127,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
         elif context.user_data.get("awaiting_keywords_scholar"):
-            await update.message.reply_text("در حال جستجو در google scholar . . .")
+            await update.message.reply_text("در حال جستجو در Google Scholar . . .")
             keywords = [keyword.strip() for keyword in text.replace(',', ' ').split() if keyword.strip()]
             result = await search_in_scholar_sources(' AND '.join(keywords))
 

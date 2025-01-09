@@ -290,7 +290,7 @@ async def search_articles_by_keywords_google(keywords: str) -> str:
 
     except Exception as e:
         print(f"خطا در تابع search_articles_by_keywords_google: {e}")
-        return "خطایی رخ داد. لطفاً دوباره تلاش کنید."
+        return "مثل اینکه به ی مشکل برخوردیم:(  میتونی داخل ❌ Pubmed جستجو کنی یا بعدا برگردی و تلاش کنی"
 
 
 
