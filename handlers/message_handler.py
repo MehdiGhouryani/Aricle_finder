@@ -44,6 +44,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
         elif text == '🔍 جستجو':
+            reset_user_data(context)
             context.user_data["awaiting_keywords"] = True
             # cursor.execute('UPDATE users SET state = ? WHERE id = ?', ('awaiting_keywords', user_id))
             await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
@@ -51,6 +52,7 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
         elif text == '📞 تماس با ما':
+            reset_user_data(context)
             await contact_us_handler(update,context)
 
 
