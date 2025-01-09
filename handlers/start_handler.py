@@ -4,17 +4,6 @@ from database import get_connection,save_user_data,increment_invite_count
 from handlers.invite_handler import (send_error_to_admin,add_points,is_already_referred,record_referral,register_user,user_exists)
 from telegram.constants import ParseMode
 
-# async def start(update: Update, context):
-#     user = update.message.from_user
-
-#     keyboards = [
-#         [KeyboardButton('دریافت مقاله با DOI'), KeyboardButton('جستجوی مقاله با کلمات کلیدی')],
-#         [KeyboardButton('ارسال خودکار مقالات جدید'),KeyboardButton('خلاصه‌سازی مقاله با هوش مصنوعی')],
-#         [KeyboardButton('تماس با ما')]
-#     ]
-#     reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
-#     await update.message.reply_text('سلام به ربات مقاله یاب خوش آمدید!', reply_markup=reply_markup)
-
 
 
 
@@ -71,7 +60,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [KeyboardButton('📞 تماس با ما')]]
 
     reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
-    await update.message.reply_text('لطفاً از یکی از گزینه‌ها استفاده کنید:', reply_markup=reply_markup)
+    await update.message.reply_text(text=start_text, reply_markup=reply_markup)
 
 
 start_handler = CommandHandler('start', start)
