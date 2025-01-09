@@ -82,7 +82,7 @@ async def fetch_article_by_doi_for_ai(doi: str) -> str:
                     title = data['message'].get('title', ['عنوانی یافت نشد'])[0]
                     abstract = data['message'].get('abstract', 'چکیده‌ای موجود نیست')
 
-                    return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان:\n\n📝 چکیده: {abstract}"
+                    return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان:\n\n📝 چکیده: {abstract[:600]}"
 
                 return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
             except Exception as e:

@@ -65,14 +65,14 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         print(f"Unexpected error for user {user_id}: {str(e)}")
-        await update.message.reply_text("❌ یک خطای غیرمنتظره رخ داده است. لطفاً دوباره تلاش کنید.")
+        await update.message.reply_text("مثل اینکه به خطا برخوردیم . بعدا دوباره تلاش کن :(")
 
 
 
 
 async def generate_summary(article_info):
     print(f"AI IS RUNNING > > > ")
-    await asyncio.sleep(15)
+    await asyncio.sleep(1205)
     try:
 
         response = model.generate_content(f"""
