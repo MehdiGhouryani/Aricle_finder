@@ -26,7 +26,7 @@ def extract_doi_from_url(text):
     if match:
         return match.group(0) 
     else:
-        return None  =
+        return None
 
 
 
@@ -34,6 +34,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input = update.message.text.strip()
     
     doi = extract_doi_from_url(user_input)
+
    
     try:
         article = scholarly.search_pubs(doi)
