@@ -128,7 +128,6 @@ async def search_in_pubmed_sources(keywords_or_doi: str) -> str:
     keywords = ' AND '.join(keywords_or_doi.split(','))
     await asyncio.sleep(2)
     try:
-        # جستجو در PubMed
         result = await search_pubmed(keywords, max_results)
         if result:
             cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
@@ -255,7 +254,7 @@ async def search_articles_by_keywords_google(keywords: str) -> str:
         search_query = scholarly.search_pubs(keywords)
         
         articles = ""
-        max_results = 4  
+        max_results = 3  
         count = 0
         await asyncio.sleep(2)
         for result in search_query:

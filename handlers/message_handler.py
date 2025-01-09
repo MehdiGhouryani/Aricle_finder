@@ -94,6 +94,15 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
             reset_user_data(context)
 
 
+            keyboards = [
+                [KeyboardButton('📄 DOI'), KeyboardButton('🔍 جستجو')],
+                [KeyboardButton('📬 ارسال خودکار مقالات'), KeyboardButton('✂️ خلاصه‌سازی با هوش مصنوعی')],
+                [KeyboardButton('📞 تماس با ما')]]
+    
+            reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
+            await update.message.reply_text(text='یکی از گزینه های زیر را انتخاب کنید <', reply_markup=reply_markup,parse_mode=ParseMode.MARKDOWN)
+
+
 
         elif context.user_data.get("awaiting_ai"):
             await summarizing(update,context)
