@@ -21,19 +21,19 @@ import re
 
 
 
-async def generate_summary(update:Update,context:ContextTypes.DEFAULT_TYPE,article):
+# async def generate_summary(update:Update,context:ContextTypes.DEFAULT_TYPE,article):
 
-    reset_user_data(context)
-    print(f"AI IS RUNNING > > > ")
-    await asyncio.sleep(1)
-    try:
-        response = model.generate_content(f"""
-مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست واسم.
-خلاصه‌ای که مینویسی به زبان عامیانه و روان فارسی و با جزيیات و حرفه ای باشه.\n\n{article}""")
+#     reset_user_data(context)
+#     print(f"AI IS RUNNING > > > ")
+#     await asyncio.sleep(1)
+#     try:
+#         response = model.generate_content(f"""
+# مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست واسم.
+# خلاصه‌ای که مینویسی به زبان عامیانه و روان فارسی و با جزيیات و حرفه ای باشه.\n\n{article}""")
             
-        await update.message.reply_text(response.text,parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        await context.bot.send_message(text=e,chat_id=1717599240)
+#         await update.message.reply_text(response.text,parse_mode=ParseMode.MARKDOWN)
+#     except Exception as e:
+#         await context.bot.send_message(text=e,chat_id=1717599240)
 
 
 
@@ -53,9 +53,10 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         await update.message.reply_text("📄 در حال  خلاصه سازی . . .")
-        await generate_summary(update,context,article_info)
+        # await generate_summary(update,context,article_info)
+        summary = generate_summary(article_info)
 
-        # await update.message.reply_text(str(summary), parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(str(summary), parse_mode=ParseMode.MARKDOWN)
 
     except ValueError as ve:
         print(f"User {user_id} encountered error: {str(ve)}")
@@ -68,19 +69,20 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-# def generate_summary(article_info):
-#     print(f"AI IS RUNNING > > > ")
-#     try:
-#         response = model.generate_content(f"""
+def generate_summary(article_info):
+    print(f"AI IS RUNNING > > > ")
+    try:
+        response = model.generate_content(f"""
 
-# مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست.
-# خلاصه‌ای که مینویسی به زبان عامیانه و روان فارسی باشه.
-# و با جزيیات و حرفه ای باشه
-# {article_info}
-#         """)
-#         return str(response.text)
-#     except Exception as e:
-#         print(f"Error in generate_summary: {str(e)}")
-#         raise ValueError("خطایی در خلاصه‌سازی مقاله رخ داد.")
+مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست.
+خلاصه‌ای که مینویسی به زبان عامیانه و روان فارسی باشه.
+و با جزيیات و حرفه ای باشه
+   و بدون  بولد کردن یا هر چیز دیگ ای باشه و ساده فقط بنویس
+{article_info}
+        """)
+        return str(response.text)
+    except Exception as e:
+        print(f"Error in generate_summary: {str(e)}")
+        raise ValueError("خطایی در خلاصه‌سازی مقاله رخ داد.")
 
 
