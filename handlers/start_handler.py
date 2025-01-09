@@ -37,7 +37,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not user_exists(user_id):
         register_user(user_id) 
-        add_points(user_id, 80)
+        # add_points(user_id, 80)
         args = context.args
         if args:
             inviter_id = args[0]  

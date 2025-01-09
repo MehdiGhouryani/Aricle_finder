@@ -4,7 +4,7 @@ from config import BOT_USERNAME,send_error_to_admin
 import sqlite3
 from telegram.constants import ParseMode
 
-INITIAL_SCORE = 5000
+INITIAL_SCORE = 80
 
 
 
