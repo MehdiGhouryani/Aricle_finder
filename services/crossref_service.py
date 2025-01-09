@@ -3,7 +3,7 @@ from scholarly import scholarly
 from services.scihub_service import fetch_scihub_article
 from config import send_error_to_admin
 from database import get_connection
-from pymedtermino import PubMed
+
 
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
 SEMANTIC_SCHOLAR_API_URL = 'https://api.semanticscholar.org/graph/v1/paper/search'
@@ -113,66 +113,71 @@ async def fetch_pdf_link_by_doi(doi: str) -> dict:
                 return {"message": f"Error: {response.status} - DOI not found"}
 
 
-
 async def search_in_multiple_sources(keywords_or_doi: str) -> str:
-    
     conn = get_connection()
     cursor = conn.cursor()
     max_results = 5
     keywords = ' AND '.join(keywords_or_doi.split(','))
+
     try:
-        result = await search_pubmed(keywords,max_results)
+        # جستجو در PubMed
+        result = await search_pubmed(keywords, max_results)
         if result:
             cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
             conn.commit()
             return result
-    #     result = await search_articles_by_keywords_google(keywords)
-    #     if result:
-    #         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-    #         conn.commit()
-    #         return result
+
         cursor.execute('UPDATE stats SET searches_failed = searches_failed + 1')
         conn.commit()
         return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
+    
     except Exception as e:
         print(f"ERROR IN SEARCH MULTIPLE SOURCE  ======> {e}")
-
-        
         return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
-    
 
-
-# تابع جستجو در PubMed
+# تابع جستجو در PubMed با استفاده از biopython
 async def search_pubmed(keywords: str, max_results: int = 5):
     try:
-        articles = PubMed.search(keywords)
+        # تنظیم ایمیل برای Entrez
+        Entrez.email = "mahdigh041@gmail.com"  # باید ایمیل خود را وارد کنید
         
-        if articles:
+        # جستجو در PubMed
+        handle = Entrez.esearch(db="pubmed", term=keywords, retmax=max_results)
+        record = Entrez.read(handle)
+        ids = record["IdList"]
+
+        # اگر مقالات یافت شدند
+        if ids:
+            # گرفتن جزئیات مقالات با استفاده از efetch
+            handle = Entrez.efetch(db="pubmed", id=ids, rettype="xml", retmode="text")
+            articles = Entrez.read(handle)
+
             result = ""
             count = 0
-
-            for article in articles:
+            for article in articles["PubmedArticle"]:
                 if count >= max_results:
                     break
                 count += 1
-                title = article.title if article.title else "عنوانی یافت نشد"
-                authors = article.authors if article.authors else "نویسندگان ناشناس"
-                url = article.url if article.url else "لینک یافت نشد"
+                
+                # استخراج اطلاعات مقاله
+                title = article["MedlineCitation"]["Article"]["ArticleTitle"]
+                authors = article["MedlineCitation"]["Article"].get("AuthorList", [])
+                authors_names = ', '.join([author["LastName"] + " " + author["ForeName"] for author in authors]) if authors else "نویسندگان ناشناس"
+                url = f"https://pubmed.ncbi.nlm.nih.gov/{article['MedlineCitation']['PMID']}/"
 
                 result += (
                     f"🔹 مقاله شماره {count}:\n"
                     f"📚 عنوان: {title}\n"
-                    f"👨‍🔬 نویسندگان: {authors}\n"
+                    f"👨‍🔬 نویسندگان: {authors_names}\n"
                     f"🔗 URL: {url}\n\n"
                 )
+
             return result
         else:
             return "مقاله‌ای یافت نشد."
-    
+
     except Exception as e:
         return f"خطا در جستجو: {e}"
-
-
 
             
 # async def search_pubmed(keywords: str) -> str:
