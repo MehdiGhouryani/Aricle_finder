@@ -63,9 +63,9 @@ async def fetch_article_by_doi(doi: str) -> str:
                     authors_str = ', '.join(author_names) if author_names else 'ناشناخته'
 
                     pdf_link = data['message'].get('URL', 'لینکی موجود نیست')
-                    abstract = data['message'].get('abstract', 'چکیده‌ای موجود نیست')
+                    # abstract = data['message'].get('abstract', 'چکیده‌ای موجود نیست')
 
-                    return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}\n\n📝 چکیده: {abstract}"
+                    return f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors_str}\n🔗 DOI: {doi}\n🔗 URL: {pdf_link}"
 
                 return "متاسفم، مقاله‌ای با این DOI پیدا نشد."
             except Exception as e:
