@@ -5,7 +5,7 @@ from services.crossref_service import search_in_multiple_sources,handle_doi_requ
 # from services.scihub_service import fetch_scihub_article
 # from handlers.stats_handler import update_user_state,get_user_state
 from handlers.auto_article_handler import manage_auto_article_sending
-from config import ADMIN_CHAT_ID,reset_user_data
+from config import ADMIN_CHAT_ID,reset_user_data,send_message_in_parts
 from handlers.invite_handler import summarize_article_handler,send_error_to_admin
 from handlers.AI import summarizing
 from telegram.constants import ParseMode
@@ -28,6 +28,8 @@ from telegram.constants import ParseMode
 async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     text = update.message.text
+    chat_id = update.effective_chat.id
+    bot = context.bot
     # state =await get_user_state(user_id)
 
 
@@ -102,7 +104,8 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
             keywords = [keyword.strip() for keyword in text.replace(',', ' ').split() if keyword.strip()]
             result = await search_in_multiple_sources(' AND '.join(keywords))
 
-            await update.message.reply_text(result)
+            await send_message_in_parts(chat_id,result,bot)
+            # await update.message.reply_text(result)
             reset_user_data(context)
 
 
