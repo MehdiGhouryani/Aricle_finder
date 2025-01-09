@@ -177,8 +177,10 @@ async def search_pubmed(keywords: str, max_results: int = 5) -> str:
                     return "خطا در اتصال به PubMed."
         except Exception as e:
             return f"خطایی رخ داد: {str(e)}"
+        
 
-# تابع دریافت جزئیات مقالات
+
+
 async def fetch_articles(ids: list) -> str:
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {
@@ -187,7 +189,7 @@ async def fetch_articles(ids: list) -> str:
         "retmode": "xml",          # فرمت XML
         "rettype": "abstract",     # دریافت چکیده مقالات
     }
-
+    print(f"fetch_articles :   {params}")
     async with aiohttp.ClientSession() as session:
         try:
             async with session.get(url, params=params) as response:
@@ -200,23 +202,23 @@ async def fetch_articles(ids: list) -> str:
                     # پردازش مقالات و استخراج عنوان و چکیده
                     for article in articles:
                         title = article['MedlineCitation']['Article']['ArticleTitle']
-                        abstract = article['MedlineCitation']['Article'].get('Abstract', {}).get('AbstractText', 'چکیده‌ای موجود نیست.')
-                        if isinstance(abstract, list):
-                            abstract = " ".join(abstract)  # اگر چکیده چند بخشی باشد
+                        abstract_data = article['MedlineCitation']['Article'].get('Abstract', {}).get('AbstractText', 'چکیده‌ای موجود نیست.')
+                        
+                        # مدیریت ساختار AbstractText
+                        if isinstance(abstract_data, list):
+                            abstract = " ".join(
+                                part['#text'] if isinstance(part, dict) and '#text' in part else str(part)
+                                for part in abstract_data
+                            )
+                        else:
+                            abstract = str(abstract_data)
+
                         result += f"عنوان: {title}\nچکیده: {abstract}\n\n"
                     return result
                 else:
                     return "خطا در دریافت اطلاعات مقالات."
         except Exception as e:
             return f"خطایی رخ داد: {str(e)}"
-
-
-
-
-
-
-
-
 
 
 
