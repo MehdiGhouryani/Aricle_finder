@@ -3,6 +3,7 @@ from scholarly import scholarly
 from services.scihub_service import fetch_scihub_article
 from config import send_error_to_admin
 from database import get_connection
+import xmltodict
 
 
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
@@ -74,6 +75,8 @@ async def fetch_article_by_doi(doi: str) -> str:
                 await send_error_to_admin(error_message)
 
 
+
+
 async def fetch_article_by_doi_for_ai(doi: str) -> str:
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{CROSSREF_API_URL}{doi}") as response:
@@ -89,6 +92,9 @@ async def fetch_article_by_doi_for_ai(doi: str) -> str:
             except Exception as e:
                 error_message = f"Error fetch article by doi  : {str(e)}"
                 await send_error_to_admin(error_message)
+
+
+
 
 
 UNPAYWALL_API_URL = "https://api.unpaywall.org/v2/"
@@ -113,6 +119,8 @@ async def fetch_pdf_link_by_doi(doi: str) -> dict:
                 return {"message": f"Error: {response.status} - DOI not found"}
 
 
+
+
 async def search_in_multiple_sources(keywords_or_doi: str) -> str:
     conn = get_connection()
     cursor = conn.cursor()
@@ -135,51 +143,83 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
         print(f"ERROR IN SEARCH MULTIPLE SOURCE  ======> {e}")
         return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
 
-# تابع جستجو در PubMed با استفاده از biopython
-async def search_pubmed(keywords: str, max_results: int = 5):
-    try:
-        # تنظیم ایمیل برای Entrez
-        Entrez.email = "mahdigh041@gmail.com"  # باید ایمیل خود را وارد کنید
-        
-        # جستجو در PubMed
-        handle = Entrez.esearch(db="pubmed", term=keywords, retmax=max_results)
-        record = Entrez.read(handle)
-        ids = record["IdList"]
-
-        # اگر مقالات یافت شدند
-        if ids:
-            # گرفتن جزئیات مقالات با استفاده از efetch
-            handle = Entrez.efetch(db="pubmed", id=ids, rettype="xml", retmode="text")
-            articles = Entrez.read(handle)
-
-            result = ""
-            count = 0
-            for article in articles["PubmedArticle"]:
-                if count >= max_results:
-                    break
-                count += 1
-                
-                # استخراج اطلاعات مقاله
-                title = article["MedlineCitation"]["Article"]["ArticleTitle"]
-                authors = article["MedlineCitation"]["Article"].get("AuthorList", [])
-                authors_names = ', '.join([author["LastName"] + " " + author["ForeName"] for author in authors]) if authors else "نویسندگان ناشناس"
-                url = f"https://pubmed.ncbi.nlm.nih.gov/{article['MedlineCitation']['PMID']}/"
-
-                result += (
-                    f"🔹 مقاله شماره {count}:\n"
-                    f"📚 عنوان: {title}\n"
-                    f"👨‍🔬 نویسندگان: {authors_names}\n"
-                    f"🔗 URL: {url}\n\n"
-                )
-
-            return result
-        else:
-            return "مقاله‌ای یافت نشد."
-
-    except Exception as e:
-        return f"خطا در جستجو: {e}"
-
             
+
+
+
+
+
+
+# تابع اصلی جستجو در PubMed
+async def search_pubmed(keywords: str, max_results: int = 5) -> str:
+    url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+    params = {
+        "db": "pubmed",             # دیتابیس PubMed
+        "term": keywords,           # کلمات کلیدی
+        "retmax": max_results,      # تعداد نتایج
+        "usehistory": "y",          # استفاده از تاریخچه جستجو
+        "retmode": "xml",           # فرمت خروجی XML
+    }
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url, params=params) as response:
+                if response.status == 200:
+                    data = await response.text()
+                    parsed_data = xmltodict.parse(data)
+                    
+                    # استخراج شناسه‌های مقالات
+                    ids = parsed_data['eSearchResult']['IdList']['Id']
+                    if isinstance(ids, str):
+                        ids = [ids]  # اگر فقط یک مقاله باشد
+                    return await fetch_articles(ids)
+                else:
+                    return "خطا در اتصال به PubMed."
+        except Exception as e:
+            return f"خطایی رخ داد: {str(e)}"
+
+# تابع دریافت جزئیات مقالات
+async def fetch_articles(ids: list) -> str:
+    url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+    params = {
+        "db": "pubmed",
+        "id": ",".join(ids),       # شناسه‌های مقالات
+        "retmode": "xml",          # فرمت XML
+        "rettype": "abstract",     # دریافت چکیده مقالات
+    }
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url, params=params) as response:
+                if response.status == 200:
+                    data = await response.text()
+                    parsed_data = xmltodict.parse(data)
+                    articles = parsed_data['PubmedArticleSet']['PubmedArticle']
+                    result = ""
+
+                    # پردازش مقالات و استخراج عنوان و چکیده
+                    for article in articles:
+                        title = article['MedlineCitation']['Article']['ArticleTitle']
+                        abstract = article['MedlineCitation']['Article'].get('Abstract', {}).get('AbstractText', 'چکیده‌ای موجود نیست.')
+                        if isinstance(abstract, list):
+                            abstract = " ".join(abstract)  # اگر چکیده چند بخشی باشد
+                        result += f"عنوان: {title}\nچکیده: {abstract}\n\n"
+                    return result
+                else:
+                    return "خطا در دریافت اطلاعات مقالات."
+        except Exception as e:
+            return f"خطایی رخ داد: {str(e)}"
+
+
+
+
+
+
+
+
+
+
+
 # async def search_pubmed(keywords: str) -> str:
 #     url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
 #     async with aiohttp.ClientSession() as session:
