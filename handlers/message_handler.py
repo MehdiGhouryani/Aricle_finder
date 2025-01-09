@@ -1,7 +1,7 @@
-from telegram import Update,InlineKeyboardButton,InlineKeyboardMarkup
+from telegram import Update,InlineKeyboardButton,InlineKeyboardMarkup,KeyboardButton,ReplyKeyboardMarkup
 from telegram.ext import MessageHandler, filters,ContextTypes
 from database import get_connection
-from services.crossref_service import search_in_multiple_sources,handle_doi_request
+from services.crossref_service import search_in_pubmed_sources,handle_doi_request,search_in_scholar_sources
 # from services.scihub_service import fetch_scihub_article
 # from handlers.stats_handler import update_user_state,get_user_state
 from handlers.auto_article_handler import manage_auto_article_sending
@@ -45,11 +45,12 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
 
+
         elif text == '🔍 جستجو':
+            keyboards = [[KeyboardButton('Google Scholar'),KeyboardButton('Pubmed')],[KeyboardButton("بازگشت به صفحه قبل ⬅️")]]
+            reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
             reset_user_data(context)
-            context.user_data["awaiting_keywords"] = True
-            # cursor.execute('UPDATE users SET state = ? WHERE id = ?', ('awaiting_keywords', user_id))
-            await update.message.reply_text('کلمات کلیدی مدنظر خود را وارد کنید (با کاما جدا کنید):')
+            await update.message.reply_text("داخل کدوم منبع واست جستجو کنم؟", reply_markup=reply_markup)
     
 
 
@@ -57,13 +58,9 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
             reset_user_data(context)
             await contact_us_handler(update,context)
 
-
-
         elif text == '📬 ارسال خودکار مقالات':
             await manage_auto_article_sending(update,context)
             reset_user_data(context)
-
-
 
 
         elif text == '✂️ خلاصه‌سازی با هوش مصنوعی':
@@ -71,14 +68,36 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
             await summarize_article_handler(update,context)
 
 
+        elif text == 'Google Scholar':  
+            reset_user_data(context)
+            
+            context.user_data["awaiting_keywords_scholar"] = True
+            await update.message.reply_text('''
+🔹 کلمات کلیدی مدنظرت رو ارسال کن :
+
+سعی کن از چند کلمه کلیدی استفاده کنی تا به نتیجه‌ی بهتری برسی
+مثال  --->  Mri, Medical,Bme
+''')
+
+        elif text == 'Pubmed':
+            reset_user_data(context)
+            
+            context.user_data["awaiting_keywords_pubmed"] = True
+            await update.message.reply_text('''
+🔹 کلمات کلیدی مدنظرت رو ارسال کن :
+
+سعی کن از چند کلمه کلیدی استفاده کنی تا به نتیجه‌ی بهتری برسی
+مثال  --->  Mri, Medical,Bme
+''')
+
+        elif text == 'بازگشت به صفحه قبل ⬅️':
+            reset_user_data(context)
 
 
 
         elif context.user_data.get("awaiting_ai"):
             await summarizing(update,context)
             reset_user_data(context)
-
-
 
 
         elif context.user_data.get("awaiting_doi"):
@@ -93,20 +112,28 @@ async def handle_message(update: Update, context:ContextTypes.DEFAULT_TYPE):
             reset_user_data(context)
 
 
-
         elif context.user_data.get("awaiting_message"):
             await receive_user_message_handler(update,context)
             reset_user_data(context)
 
 
-
-        elif context.user_data.get("awaiting_keywords"):
+        elif context.user_data.get("awaiting_keywords_pubmed"):
+            await update.message.reply_text("در حال جستجو در Pubmd . . . ")
             keywords = [keyword.strip() for keyword in text.replace(',', ' ').split() if keyword.strip()]
-            result = await search_in_multiple_sources(' AND '.join(keywords))
+            result = await search_in_pubmed_sources(' AND '.join(keywords))
 
             await send_message_in_parts(chat_id,result,bot)
-            # await update.message.reply_text(result)
             reset_user_data(context)
+
+
+        elif context.user_data.get("awaiting_keywords_scholar"):
+            await update.message.reply_text("در حال جستجو در google scholar . . .")
+            keywords = [keyword.strip() for keyword in text.replace(',', ' ').split() if keyword.strip()]
+            result = await search_in_scholar_sources(' AND '.join(keywords))
+
+            await send_message_in_parts(chat_id,result,bot)
+            reset_user_data(context)
+
 
 
 
