@@ -121,27 +121,22 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
     max_results = 5
     keywords = ' AND '.join(keywords_or_doi.split(','))
     try:
-    #     result = await search_articles_by_keywords_google(keywords)
-    #     if result:
-    #         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-    #         conn.commit()
-    #         return result
         result = await search_pubmed(keywords,max_results)
         if result:
             cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
             conn.commit()
             return result
+    #     result = await search_articles_by_keywords_google(keywords)
+    #     if result:
+    #         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+    #         conn.commit()
+    #         return result
         cursor.execute('UPDATE stats SET searches_failed = searches_failed + 1')
         conn.commit()
         return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
     except Exception as e:
         print(f"ERROR IN SEARCH MULTIPLE SOURCE  ======> {e}")
 
-
-
-        pubmed_results = await search_pubmed(keywords, max_results)
-        if pubmed_results:
-            return pubmed_results
         
         return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
     
@@ -196,66 +191,66 @@ async def search_pubmed(keywords: str, max_results: int = 5):
 
 
 
-async def search_articles_by_keywords_google(keywords: str) -> str:
-    try:
-        search_query = scholarly.search_pubs(keywords)
+# async def search_articles_by_keywords_google(keywords: str) -> str:
+#     try:
+#         search_query = scholarly.search_pubs(keywords)
         
-        articles = ""
-        max_results = 5  # محدودیت تعداد نتایج
-        count = 0
+#         articles = ""
+#         max_results = 5  # محدودیت تعداد نتایج
+#         count = 0
 
-        for result in search_query:
-            if count >= max_results:
-                break
+#         for result in search_query:
+#             if count >= max_results:
+#                 break
 
-            # عنوان مقاله
-            title = result['bib'].get('title', 'عنوانی یافت نشد')
+#             # عنوان مقاله
+#             title = result['bib'].get('title', 'عنوانی یافت نشد')
 
-            # نویسندگان
-            authors_list = result['bib'].get('author', [])
-            if authors_list:
-                authors = ', '.join(authors_list)
-            else:
-                authors = "نویسندگان ناشناس"
+#             # نویسندگان
+#             authors_list = result['bib'].get('author', [])
+#             if authors_list:
+#                 authors = ', '.join(authors_list)
+#             else:
+#                 authors = "نویسندگان ناشناس"
 
-            # لینک مقاله
-            url = result.get('pub_url')
-            if not url:
-                url = f"https://www.google.com/search?q={title.replace(' ', '+')}"
+#             # لینک مقاله
+#             url = result.get('pub_url')
+#             if not url:
+#                 url = f"https://www.google.com/search?q={title.replace(' ', '+')}"
 
-            # افزودن به خروجی
-            count += 1
-            articles += (
-                f"🔹 مقاله شماره {count}:\n"
-                f"📚 عنوان: {title}\n"
-                f"👨‍🔬 نویسندگان: {authors}\n"
-                f"🔗 URL: {url}\n\n"
-            )
+#             # افزودن به خروجی
+#             count += 1
+#             articles += (
+#                 f"🔹 مقاله شماره {count}:\n"
+#                 f"📚 عنوان: {title}\n"
+#                 f"👨‍🔬 نویسندگان: {authors}\n"
+#                 f"🔗 URL: {url}\n\n"
+#             )
 
-        return articles if articles else "مقاله‌ای یافت نشد."
+#         return articles if articles else "مقاله‌ای یافت نشد."
 
-    except Exception as e:
-        print(f"خطا در تابع search_articles_by_keywords_google: {e}")
-        return "خطایی رخ داد. لطفاً دوباره تلاش کنید."
-
-
+#     except Exception as e:
+#         print(f"خطا در تابع search_articles_by_keywords_google: {e}")
+#         return "خطایی رخ داد. لطفاً دوباره تلاش کنید."
 
 
-async def search_articles_by_keywords(keywords: str) -> str:
-    query = '+'.join(keywords.split())
-    url = f"{CROSSREF_API_URL}?query={query}&rows=5"
+
+
+# async def search_articles_by_keywords(keywords: str) -> str:
+#     query = '+'.join(keywords.split())
+#     url = f"{CROSSREF_API_URL}?query={query}&rows=5"
     
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            if response.status == 200:
-                data = await response.json()
-                articles = ""
-                for item in data['message']['items']:
-                    title = item['title'][0] if 'title' in item else 'عنوانی یافت نشد'
-                    authors = ', '.join([author['given'] + ' ' + author['family'] for author in item.get('author', [])])
-                    url = item.get('URL', 'لینکی موجود نیست')
-                    articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
-                return articles if articles else "مقاله‌ای یافت نشد."
+#     async with aiohttp.ClientSession() as session:
+#         async with session.get(url) as response:
+#             if response.status == 200:
+#                 data = await response.json()
+#                 articles = ""
+#                 for item in data['message']['items']:
+#                     title = item['title'][0] if 'title' in item else 'عنوانی یافت نشد'
+#                     authors = ', '.join([author['given'] + ' ' + author['family'] for author in item.get('author', [])])
+#                     url = item.get('URL', 'لینکی موجود نیست')
+#                     articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
+#                 return articles if articles else "مقاله‌ای یافت نشد."
             
 
 
