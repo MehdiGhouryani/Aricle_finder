@@ -15,6 +15,7 @@ BOT_USERNAME = "MaghaleBazbot"
 
 def reset_user_data(context):
     if context.user_data:
+        print("RESET USER DATA ____________")
         for key in context.user_data.keys():
             context.user_data[key] = False
 
