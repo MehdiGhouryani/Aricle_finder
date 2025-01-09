@@ -255,7 +255,7 @@ async def search_articles_by_keywords_google(keywords: str) -> str:
         search_query = scholarly.search_pubs(keywords)
         
         articles = ""
-        max_results = 5  # محدودیت تعداد نتایج
+        max_results = 4  
         count = 0
         await asyncio.sleep(2)
         for result in search_query:
