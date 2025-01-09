@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from services.crossref_service import fetch_article_by_doi
 load_dotenv()
 import re
-
+import asyncio
 
 
 gen_token =os.getenv("genai")
@@ -22,14 +22,14 @@ import re
 
 
 async def generate_summary(update:Update,context:ContextTypes.DEFAULT_TYPE,article):
-    print(f"AI IS RUNNING > > > ")
-    reset_user_data(context)
 
+    reset_user_data(context)
+    print(f"AI IS RUNNING > > > ")
+    asyncio.sleep(1)
     try:
         response = model.generate_content(f"""
 مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست واسم.
-خلاصه‌ای که مینویسی به زبان عامیانه و روان فارسی و با جزيیات و حرفه ای باشه.
-{article}""")
+خلاصه‌ای که مینویسی به زبان عامیانه و روان فارسی و با جزيیات و حرفه ای باشه.\n\n{article}""")
             
         await update.message.reply_text(response.text,parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
