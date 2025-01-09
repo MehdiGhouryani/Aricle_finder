@@ -7,6 +7,8 @@ from config import reset_user_data
 from dotenv import load_dotenv
 from scholarly import scholarly
 load_dotenv()
+import re
+
 
 
 gen_token =os.getenv("genai")
@@ -15,29 +17,24 @@ genai.configure(api_key=gen_token)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 
-import re
+def extract_doi_from_url(text):
 
-def extract_doi_from_url(url):
-    match = re.search(r'doi\.org/([0-9]+(?:\.[0-9]+)+)', url)
+    doi_pattern = r'(10.d{4,9}/[-._;()/:A-Z0-9]+)'
+    
+    match = re.search(doi_pattern, text, re.IGNORECASE)
+    
     if match:
-        return match.group(1)
+        return match.group(0) 
     else:
-        return None
+        return None  =
+
 
 
 async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input = update.message.text.strip()
     
-    if 'doi.org' in user_input:
-        doi = extract_doi_from_url(user_input)
-        if not doi:
-            await update.message.reply_text("لطفاً یک DOI معتبر وارد کنید.")
-            return
-    elif re.match(r'^\d{4}/\d{9}', user_input):  # DOI معمولی
-        doi = user_input
-    else:
-        await update.message.reply_text("لطفاً DOI یا لینک معتبر مقاله را وارد کنید.")
-        return    
+    doi = extract_doi_from_url(user_input)
+   
     try:
         article = scholarly.search_pubs(doi)
         article_info = next(article)
