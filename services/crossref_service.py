@@ -3,6 +3,7 @@ from scholarly import scholarly
 from services.scihub_service import fetch_scihub_article
 from config import send_error_to_admin
 from database import get_connection
+from pymedtermino import PubMed
 
 CROSSREF_API_URL = 'https://api.crossref.org/works/'
 SEMANTIC_SCHOLAR_API_URL = 'https://api.semanticscholar.org/graph/v1/paper/search'
@@ -117,15 +118,15 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
     
     conn = get_connection()
     cursor = conn.cursor()
-
+    max_results = 5
     keywords = ' AND '.join(keywords_or_doi.split(','))
     try:
-        result = await search_articles_by_keywords_google(keywords)
-        if result:
-            cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
-            conn.commit()
-            return result
-        result = await search_pubmed(keywords)
+    #     result = await search_articles_by_keywords_google(keywords)
+    #     if result:
+    #         cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
+    #         conn.commit()
+    #         return result
+        result = await search_pubmed(keywords,max_results)
         if result:
             cursor.execute('UPDATE stats SET searches_successful = searches_successful + 1')
             conn.commit()
@@ -135,6 +136,64 @@ async def search_in_multiple_sources(keywords_or_doi: str) -> str:
         return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
     except Exception as e:
         print(f"ERROR IN SEARCH MULTIPLE SOURCE  ======> {e}")
+
+
+
+        pubmed_results = await search_pubmed(keywords, max_results)
+        if pubmed_results:
+            return pubmed_results
+        
+        return "هیچ مقاله‌ای برای درخواست شما پیدا نشد."
+    
+
+
+# تابع جستجو در PubMed
+async def search_pubmed(keywords: str, max_results: int = 5):
+    try:
+        articles = PubMed.search(keywords)
+        
+        if articles:
+            result = ""
+            count = 0
+
+            for article in articles:
+                if count >= max_results:
+                    break
+                count += 1
+                title = article.title if article.title else "عنوانی یافت نشد"
+                authors = article.authors if article.authors else "نویسندگان ناشناس"
+                url = article.url if article.url else "لینک یافت نشد"
+
+                result += (
+                    f"🔹 مقاله شماره {count}:\n"
+                    f"📚 عنوان: {title}\n"
+                    f"👨‍🔬 نویسندگان: {authors}\n"
+                    f"🔗 URL: {url}\n\n"
+                )
+            return result
+        else:
+            return "مقاله‌ای یافت نشد."
+    
+    except Exception as e:
+        return f"خطا در جستجو: {e}"
+
+
+
+            
+# async def search_pubmed(keywords: str) -> str:
+#     url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
+#     async with aiohttp.ClientSession() as session:
+#         async with session.get(url) as response:
+#             if response.status == 200:
+#                 data = await response.text()
+#                 articles = ""
+#                 for entry in data.split('\n\n'):
+#                     if 'TI  -' in entry and 'AU  -' in entry:
+#                         title = entry.split('TI  - ')[1].split('\n')[0]
+#                         author = entry.split('AU  - ')[1].split('\n')[0]
+#                         articles += f"📚 عنوان: {title.strip()}\n👨‍🔬 نویسندگان: {author.strip()}\n\n"
+#                 return articles if articles else "مقاله‌ای یافت نشد."
+
 
 
 async def search_articles_by_keywords_google(keywords: str) -> str:
@@ -198,25 +257,6 @@ async def search_articles_by_keywords(keywords: str) -> str:
                     articles += f"📚 عنوان: {title}\n👨‍🔬 نویسندگان: {authors}\n🔗 URL: {url}\n\n"
                 return articles if articles else "مقاله‌ای یافت نشد."
             
-
-
-
-
-            
-async def search_pubmed(keywords: str) -> str:
-    url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            if response.status == 200:
-                data = await response.text()
-                articles = ""
-                for entry in data.split('\n\n'):
-                    if 'TI  -' in entry and 'AU  -' in entry:
-                        title = entry.split('TI  - ')[1].split('\n')[0]
-                        author = entry.split('AU  - ')[1].split('\n')[0]
-                        articles += f"📚 عنوان: {title.strip()}\n👨‍🔬 نویسندگان: {author.strip()}\n\n"
-                return articles if articles else "مقاله‌ای یافت نشد."
-
 
 
 
