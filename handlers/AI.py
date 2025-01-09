@@ -56,8 +56,8 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text("📄 در حال  خلاصه سازی . . .")
         summary = generate_summary(article_info)
-        summary_str = str(summary)
-        await update.message.reply_text(summary_str,parse_mode=ParseMode.MARKDOWN)
+
+        await update.message.reply_text(summary,parse_mode=ParseMode.MARKDOWN)
 
     except ValueError as ve:
         print(f"User {user_id} encountered error: {str(ve)}")
@@ -71,8 +71,8 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def generate_summary(article_info):
+    print(f"AI IS RUNNING > > > ")
     try:
-
         response = model.generate_content(f"""
 
 مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست واسم.
@@ -80,7 +80,7 @@ def generate_summary(article_info):
 
 {article_info}
         """)
-        return response.text
+        return str(response.text)
     except Exception as e:
         print(f"Error in generate_summary: {str(e)}")
         raise ValueError("خطایی در خلاصه‌سازی مقاله رخ داد.")
