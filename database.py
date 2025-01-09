@@ -9,6 +9,18 @@ def init_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS stats (searches_successful INTEGER, searches_failed INTEGER)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS auto_article (chat_id INTEGER, keywords TEXT)''')
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS points (
+            user_id INT REFERENCES users(user_id) PRIMARY KEY,
+            score INTEGER NOT NULL
+)""")
+     
+    cursor.execute('''CREATE TABLE IF NOT EXISTS referrals (
+                   inviter_id INTEGER,
+                   invited_id INTEGER,
+                   UNIQUE(inviter_id,invited_id)
+)''')
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
@@ -18,18 +30,8 @@ def init_db():
             invite_count INTEGER DEFAULT 0,
             last_summary_date DATE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+)''')
 
-
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS invites (
-        inviter_user_id INTEGER,
-        invitee_user_id INTEGER DEFAULT 0,
-        used BOOLEAN DEFAULT FALSE,
-        PRIMARY KEY (inviter_user_id, invitee_user_id)
-    )
-    ''')
 
 
     conn.commit()
@@ -41,7 +43,7 @@ def get_connection():
 
 async def increment_invite_count(inviter_user_id):
     try:
-        conn = sqlite3.connect('users.db')
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         
         c.execute('''
@@ -59,7 +61,7 @@ async def increment_invite_count(inviter_user_id):
 
 def save_user_data(user_id, chat_id, username):
     try:
-        conn = sqlite3.connect('database.db')
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         
         c.execute('''

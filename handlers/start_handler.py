@@ -1,7 +1,7 @@
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import CommandHandler,ContextTypes
 from database import get_connection,save_user_data,increment_invite_count
-from handlers.invite_handler import (send_error_to_admin,add_invite,send_invite_link)
+from handlers.invite_handler import (send_error_to_admin,add_points,is_already_referred,record_referral,register_user,user_exists)
 from telegram.constants import ParseMode
 
 # async def start(update: Update, context):
@@ -14,7 +14,6 @@ from telegram.constants import ParseMode
 #     ]
 #     reply_markup = ReplyKeyboardMarkup(keyboards, resize_keyboard=True)
 #     await update.message.reply_text('سلام به ربات مقاله یاب خوش آمدید!', reply_markup=reply_markup)
-
 
 
 
@@ -45,30 +44,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 هر سوالی بود، ما اینجاییم!
 '''
 
-    inviter_user_id = None
-    if "start=" in update.message.text:
-        inviter_user_id = update.message.text.split('start=')[1]
-    
-    # ذخیره اطلاعات کاربر
     save_user_data(user_id, chat_id, username)
-    # await send_invite_link(update,user_id)
-    if inviter_user_id:
-        try:
-            await add_invite(int(inviter_user_id), user_id)
-            await increment_invite_count(int(inviter_user_id))  
-            await update.message.reply_text(f"شما با موفقیت از لینک دعوت وارد شدید. حالا می‌توانید از قابلیت‌ها استفاده کنید!")
 
-            # ارسال پیام به کاربر دعوت‌دهنده
-            inviter_user = await context.bot.get_chat_member(chat_id=inviter_user_id, user_id=inviter_user_id)
-            inviter_name = inviter_user.user.full_name
-            await context.bot.send_message(
-                inviter_user_id,
-                f"یک نفر به نام {name} از طرف شما به ربات پیوست و حالا می‌تواند از بخش خلاصه‌سازی استفاده کند."
-            )
+    if not user_exists(user_id):
+        register_user(user_id) 
 
-        except Exception as e:
-            error_message = f"Error processing start for {user_id} with inviter {inviter_user_id}: {str(e)}"
-            await send_error_to_admin(error_message)
+        args = context.args
+        if args:
+            inviter_id = args[0]  
+            if inviter_id.isdigit() and user_exists(int(inviter_id)) and int(inviter_id) != user_id:
+                inviter_id = int(inviter_id)
+
+                if not is_already_referred(inviter_id, user_id):
+                    add_points(inviter_id, 80)  # افزایش امتیاز کاربر دعوت‌کننده
+                    record_referral(inviter_id, user_id)  # ثبت دعوت در دیتابیس
+                    await context.bot.send_message(chat_id=inviter_id, text="🎉 شما 50 امتیاز بابت دعوت کاربر جدید دریافت کردید!")
+
+
     else:
         await update.message.reply_text(start_text,parse_mode=ParseMode.MARKDOWN)
 
