@@ -56,12 +56,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text(
             f"📄 اطلاعات مقاله دریافت شد:\n\n"
-            f"عنوان: {article_info['title']}\n"
-            f"نویسنده(ها): {article_info['authors']}\n"
-            f"🔗 DOI: {user_message}\n"
-            f"🔗 لینک PDF: {article_info['pdf_link']}\n\n"
-            f"📝 چکیده: {article_info['abstract']}\n\n\n"
-            f"🔄 در حال آماده‌سازی خلاصه مقاله...",
+            f"{article_info}",
             parse_mode=ParseMode.MARKDOWN
         )
         summary = generate_summary(article_info)
