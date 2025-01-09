@@ -126,7 +126,7 @@ async def search_in_pubmed_sources(keywords_or_doi: str) -> str:
     cursor = conn.cursor()
     max_results = 5
     keywords = ' AND '.join(keywords_or_doi.split(','))
-    asyncio.sleep(2)
+    await asyncio.sleep(2)
     try:
         # جستجو در PubMed
         result = await search_pubmed(keywords, max_results)
@@ -150,7 +150,7 @@ async def search_in_scholar_sources(keywords_or_doi: str) -> str:
     conn = get_connection()
     cursor = conn.cursor()
     keywords = ' AND '.join(keywords_or_doi.split(','))
-    asyncio.sleep(3)
+    await asyncio.sleep(3)
     try:
         result = await search_articles_by_keywords_google(keywords)
         if result:
@@ -179,7 +179,7 @@ async def search_pubmed(keywords: str, max_results: int = 5) -> str:
         "usehistory": "y",          # استفاده از تاریخچه جستجو
         "retmode": "xml",           # فرمت خروجی XML
     }
-    asyncio.sleep(2)
+    await asyncio.sleep(2)
     async with aiohttp.ClientSession() as session:
         try:
             async with session.get(url, params=params) as response:
