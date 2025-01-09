@@ -17,18 +17,27 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 
 import re
 
+def extract_doi_from_url(url):
+    match = re.search(r'doi\.org/([0-9]+(?:\.[0-9]+)+)', url)
+    if match:
+        return match.group(1)
+    else:
+        return None
+
+
 async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input = update.message.text.strip()
     
     if 'doi.org' in user_input:
-
-        doi = user_input.split('doi.org/')[1]
-    elif re.match(r'^\d{4}/\d{9}', user_input):  
+        doi = extract_doi_from_url(user_input)
+        if not doi:
+            await update.message.reply_text("لطفاً یک DOI معتبر وارد کنید.")
+            return
+    elif re.match(r'^\d{4}/\d{9}', user_input):  # DOI معمولی
         doi = user_input
     else:
         await update.message.reply_text("لطفاً DOI یا لینک معتبر مقاله را وارد کنید.")
-        return
-    
+        return    
     try:
         article = scholarly.search_pubs(doi)
         article_info = next(article)
