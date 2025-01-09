@@ -21,7 +21,7 @@ import re
 
 
 
-async def summarizing(update:Update,context:ContextTypes.DEFAULT_TYPE,article):
+async def generate_summary(update:Update,context:ContextTypes.DEFAULT_TYPE,article):
 
     reset_user_data(context)
 
@@ -53,7 +53,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         await update.message.reply_text("📄 در حال  خلاصه سازی . . .")
-        summarizing(update,context,article_info)
+        await generate_summary(update,context,article_info)
 
         # await update.message.reply_text(str(summary), parse_mode=ParseMode.MARKDOWN)
 
