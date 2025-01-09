@@ -54,7 +54,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text("📄 در حال  خلاصه سازی . . .")
         # await generate_summary(update,context,article_info)
-        summary = generate_summary(article_info)
+        summary =await generate_summary(article_info)
 
         await update.message.reply_text(str(summary), parse_mode=ParseMode.MARKDOWN)
 
@@ -69,10 +69,11 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-def generate_summary(article_info):
+async def generate_summary(article_info):
     print(f"AI IS RUNNING > > > ")
+    await asyncio.sleep(15)
     try:
-        await asyncio.sleep(15)
+
         response = model.generate_content(f"""
 
 مقاله زیر رو بررسی کن و یک خلاصه خیلی کامل ازش بفرست.
