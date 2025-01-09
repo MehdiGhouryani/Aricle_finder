@@ -178,8 +178,6 @@ async def search_pubmed(keywords: str, max_results: int = 5) -> str:
         except Exception as e:
             return f"خطایی رخ داد: {str(e)}"
         
-
-
 async def fetch_articles(ids: list) -> str:
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {
@@ -200,6 +198,11 @@ async def fetch_articles(ids: list) -> str:
                     # پردازش مقالات و استخراج اطلاعات مورد نیاز
                     for idx, article in enumerate(articles, start=1):
                         title = article['MedlineCitation']['Article']['ArticleTitle']
+                        
+                        # استخراج PMID به‌درستی
+                        pmid = article['MedlineCitation']['PMID']['#text']
+                        article_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+
                         authors_list = article['MedlineCitation']['Article'].get('AuthorList', {}).get('Author', [])
                         authors = []
 
@@ -214,10 +217,6 @@ async def fetch_articles(ids: list) -> str:
 
                         authors_str = ", ".join(authors) if authors else "نویسندگان موجود نیستند."
 
-                        # لینک مقاله
-                        article_id = article['MedlineCitation']['PMID']
-                        article_url = f"https://pubmed.ncbi.nlm.nih.gov/{article_id}/"
-
                         # ساخت نتیجه
                         result += (
                             f"🔹 مقاله شماره {idx}:\n"
@@ -230,7 +229,12 @@ async def fetch_articles(ids: list) -> str:
                     return "خطا در دریافت اطلاعات مقالات."
         except Exception as e:
             return f"خطایی رخ داد: {str(e)}"
+        
 
+
+
+
+        
 # async def search_pubmed(keywords: str) -> str:
 #     url = f"https://api.ncbi.nlm.nih.gov/lit/ctxp/v1/pubmed/?format=ris&term={keywords}"
 #     async with aiohttp.ClientSession() as session:
