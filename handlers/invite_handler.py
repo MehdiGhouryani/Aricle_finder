@@ -119,7 +119,7 @@ async def summarize_article_handler(update: Update, context: ContextTypes.DEFAUL
     user_id = update.message.from_user.id
     try:
         if check_score(user_id):
-            await use_score(user_id)
+            use_score(user_id)
             context.user_data["awaiting_ai"] = True
             await update.message.reply_text("لطفاً مقاله خود را ارسال کنید تا آن را خلاصه کنیم.")
         else:
