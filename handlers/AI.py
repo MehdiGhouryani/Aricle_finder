@@ -34,7 +34,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input = update.message.text.strip()
     
     doi = extract_doi_from_url(user_input)
-
+    print(doi)
    
     try:
         article = scholarly.search_pubs(doi)
