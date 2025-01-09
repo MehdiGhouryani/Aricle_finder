@@ -72,7 +72,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def generate_summary(article_info):
     print(f"AI IS RUNNING > > > ")
-    await asyncio.sleep(1205)
+    await asyncio.sleep(15)
     try:
 
         response = model.generate_content(f"""
