@@ -8,7 +8,7 @@ from handlers.auto_article_handler import manage_auto_article_sending
 from config import ADMIN_CHAT_ID,reset_user_data
 from handlers.invite_handler import summarize_article_handler,send_error_to_admin
 from handlers.AI import summarizing
-
+from telegram.constants import ParseMode
 
 
 
@@ -126,7 +126,7 @@ async def contact_us_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(
         """ 
 **پشتیبانی ما در خدمت شماست! 💬**
-اگر سوال ، درخواست یا هر مشکلی دارید پیامتونو بذارید. ما در اولین فرصت به شما پاسخ خواهیم داد."""
+اگر سوال ، درخواست یا هر مشکلی دارید پیامتونو بذارید. ما در اولین فرصت به شما پاسخ خواهیم داد.""",parse_mode=ParseMode.MARKDOWN
 )
     context.user_data["awaiting_message"] = True
 

@@ -50,7 +50,6 @@ async def handle_doi_request(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 
 
-
 async def fetch_article_by_doi(doi: str) -> str:
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{CROSSREF_API_URL}{doi}") as response:
@@ -128,7 +127,7 @@ async def search_articles_by_keywords_google(keywords: str) -> str:
         search_query = scholarly.search_pubs(keywords)
         
         articles = ""
-        max_results = 4  # محدودیت تعداد نتایج
+        max_results = 5  # محدودیت تعداد نتایج
         count = 0
 
         for result in search_query:
