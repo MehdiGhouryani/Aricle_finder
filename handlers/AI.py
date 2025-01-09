@@ -9,7 +9,7 @@ from services.crossref_service import fetch_article_by_doi_for_ai
 load_dotenv()
 import re
 import asyncio
-
+from handlers.invite_handler import add_points
 
 gen_token =os.getenv("genai")
 
@@ -50,6 +50,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if article_info == "متاسفم، مقاله‌ای با این DOI پیدا نشد.":
             await update.message.reply_text("❌ مقاله‌ای با این DOI یافت نشد. لطفاً دوباره تلاش کنید.")
+            add_points(user_id, 50)
             return
 
         await update.message.reply_text("📄 در حال  خلاصه سازی . . .")
@@ -57,7 +58,7 @@ async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
         summary =await generate_summary(article_info)
 
         await update.message.reply_text(str(summary), parse_mode=ParseMode.MARKDOWN)
-
+        reset_user_data(context)
     except ValueError as ve:
         print(f"User {user_id} encountered error: {str(ve)}")
         await update.message.reply_text(f"❌ {str(ve)}")

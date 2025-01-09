@@ -121,13 +121,12 @@ async def summarize_article_handler(update: Update, context: ContextTypes.DEFAUL
             use_score(user_id)
             context.user_data["awaiting_ai"] = True
 
-            await update.message.reply_text("""
-                                            
-📌 نکته مهم **: ابتدا از بخش **📄 DOI بررسی کن مقاله در دسترس باشه و بعد درخواست خلاصه‌سازی بده تا از امتیازت الکی کسر نشه !
+            await update.message.reply_text("""     
+📌 نکته مهم : ابتدا از بخش📄 DOI بررسی کن مقاله در دسترس باشه و بعد درخواست خلاصه‌سازی بده تا از امتیازت الکی کسر نشه !
 
 
 خب اگ بررسی کردی DOI مقالتو این پایین بفرست تا نکات مفید و خلاصه‌شو واست بگم 😊
-""",parse_mode=ParseMode)
+""")
         else:
             await update.message.reply_text("مثل اینک امتیازت کافی نیست !")
             await send_invite_link(update,user_id)
