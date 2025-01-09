@@ -58,10 +58,10 @@ def extract_doi(user_input: str):
     return None
 
 async def summarizing(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_input = update.message.text.strip()
+    doi = update.message.text.strip()
     
-    doi = extract_doi(user_input)
-    print(doi)
+    # doi = extract_doi(user_input)
+    # print(doi)
    
     try:
         article = scholarly.search_pubs(doi)
