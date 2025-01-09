@@ -179,14 +179,13 @@ async def search_pubmed(keywords: str, max_results: int = 5) -> str:
             return f"خطایی رخ داد: {str(e)}"
         
 
-
 async def fetch_articles(ids: list) -> str:
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {
         "db": "pubmed",
-        "id": ",".join(ids),  # شناسه‌های مقالات
-        "retmode": "xml",     # فرمت XML
-        "rettype": "abstract" # دریافت چکیده مقالات
+        "id": ",".join(ids),
+        "retmode": "xml",
+        "rettype": "abstract"
     }
     print(f"fetch_articles: {params}")
     
@@ -199,18 +198,18 @@ async def fetch_articles(ids: list) -> str:
                     articles = parsed_data['PubmedArticleSet']['PubmedArticle']
                     result = ""
 
-                    # پردازش مقالات
+                    # بررسی دقیق تر مقالات و چاپ داده‌ها
                     for idx, article in enumerate(articles, start=1):
-                        # استخراج عنوان
                         title = article['MedlineCitation']['Article']['ArticleTitle']
+                        print(f"Article {idx} title: {title}")  # بررسی دقیق‌تر عنوان
                         
                         # استخراج نویسندگان
                         authors_list = article['MedlineCitation']['Article'].get('AuthorList', {}).get('Author', [])
-                        if isinstance(authors_list, dict):  # یک نویسنده
+                        if isinstance(authors_list, dict):
                             authors = f"{authors_list.get('LastName', '')} {authors_list.get('Initials', '')}"
-                        else:  # چند نویسنده
+                        else:
                             authors = ", ".join(
-                                f"{author.get('LastName', '')} {author.get('Initials', '')}" 
+                                f"{author.get('LastName', '')} {author.get('Initials', '')}"
                                 for author in authors_list if 'LastName' in author
                             )
                         
@@ -229,7 +228,6 @@ async def fetch_articles(ids: list) -> str:
                     return "خطا در دریافت اطلاعات مقالات."
         except Exception as e:
             return f"خطایی رخ داد: {str(e)}"
-
 
 
 
